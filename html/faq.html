@@ -1,0 +1,120 @@
+<html>
+
+<head>
+
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+
+<link rel=stylesheet href="chilibot.css" type="text/css">
+
+</head>
+
+		<center>
+<h2> User Manual</h2>
+(work in progress)
+</center>
+	<img src=/chilibot/images/bluebar.gif width=600 height=3 border=0>
+<p>
+<br><a href="#curate">How can I curate the results?</a>
+<br><a href="#edit">Why do you ask me to edit the synonyms?</a>
+<br><a href="#one2many">Is it possible to do a one to many query? </a>
+<br><a href="#modulate">Why is 'modulate' a special keyword?</a>
+<br><a href="#notpubmed">When should I use Chilibot instead of PubMed?</a>
+<br><a href="#notworking">Why is this not working?</a>
+<br><a href="#context">Why are context keywords?</a>
+
+<hr>
+<h3> <a name="registration">Why do I need to register</a></h3>
+
+Registered users have passwords to protect their results from other users. In
+addition, registered users can keep their results as long as they'd like to,
+while results for unregistered users are deleted after a month. 
+
+<h3><a name="curate">How can I curate the results?</a></h3>
+
+Currently there are two methods to curate the results. Both of them deal with
+false positive relationships. If multiple false positive results are related to
+one particular synonym, you can edit the synonym by using the "Edit synonym"
+button located below the main graph. Or, if the false positive result is
+limited to a particular relationship, you can delete the relationship by using
+the button located under the title of the relationship in the right panel (You
+will need to reload the images to see the updated graph).
+
+
+<h3><a name="edit">Why do you ask me to edit the synonyms?</a></h3> 
+
+The optimal use of synonyms is critical to the overall performance of Chilibot.
+Chilibot provides a list of synonyms that are collected from several
+genomic/proteomic databases. Nomenclatures are semi-manually curated before
+compiled into a large database but it may not fit with your needs. Thus, all
+synonyms are provided to the user before the queries are conducted and can be
+edited at that time. However, if you are searching for a large number of terms,
+it is not practical to manually verify all the synonyms. In that case, you can
+just hit the "next" button and let our algorithm do the job. After the query is
+done, you can review the texts (sentences, with the synonyms highlighted). If you
+find a particular synonym is causing multiple false relationships, you can
+click on the "Edit synonym / update session" button to edit the synonyms. The
+query will be updated after you hit the "next" button. <p> Names with less
+than three letters are particularly prone to errors. Thus, we flagged some of
+them with "!". These flagged names are excluded from the query by default. You
+can include them in the query by deleting the exclamation mark.
+
+
+<h3><a name="one2many">Is it possible to do a one to many query? </a></h3>
+
+Chilibot defaults to conduct pair-wise queries. If you are interested only in
+relationships between one term (e.g. A) and a list of other terms (e.g. A-B,
+A-C. and A-D), and are not interested in the other possible relationships (e.g
+B-C, B-D, C-D), you can use the one-to-many query function. All you need to do
+is to put the first term (e.g. A) on the first line and the word "one2many" in
+the second line, followed by the rest of the terms, each occupy one line. For
+example:
+
+<pre>
+Apoptosis
+one2many
+creb
+bdnf
+trkb
+</pre>
+Guess what if you put two terms above "one2many"?
+
+<h3><a name="modulate">Why is 'modulate' a special keyword?</a></h3>
+You'll see the magic power of this word by include it in a query. For example
+<pre>
+jnk
+modulate
+</pre>
+
+<h3><a name="notpubmed">When should I use Chilibot instead of PubMed?</a></h3>
+If you are interested in the relationship between two terms, it will be a lot easier if you used the 'two term query' interface located on the front page of Chilibot. You won't be scanning through abstract after abstract just to find the terms of your interest. Chilibot will pre-read the abstract and show you the sentences. Of course, you'll still get a link to the PubMed results for verification purpose.
+
+<h3><a name="context">What are context keywords?</a></h3>
+Chilibot defaults to search the entire PubMed for relationships. However, sometimes, you may wish to restrict your search to a subset of PubMed to increase the relavance of the results. This can be achieved by provide a few keywords in the 'context keyword' window. Chilibot then ignores abstracts that do not contain these keywords. If multiple keywords are provided, please connect them with boolean operators. 
+
+<h3><a name="notworking">Why is this not working?</a></h3>
+Last time we checked, everything worked flawlessly. If you think it is not, you can either consult with your psychologist or complain to hchen at utmem . edu, if you can figure out the correct email address.
+
+
+.<p>
+.<p>
+.<p>
+.<p>
+.<p>
+.<p>
+.<p>
+.<p>
+.<p>
+.<p>
+.<p>
+.<p>
+.<p>
+.<p>
+.<p>
+.<p>
+.<p>
+.<p>
+.<p>
+.<p>
+.<p>
+.<p>
+.<p>

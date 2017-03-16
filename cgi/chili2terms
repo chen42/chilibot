@@ -1,0 +1,91 @@
+#!/usr/bin/perl
+use DBI;
+use File::Path;
+use LWP::Simple qw(get);
+use CGI qw(:standard);
+#use CGI::Carp qw(fatalsToBrowser);
+
+require '/home/httpd/cgi-bin/chilibot/chili_subs.pl';
+require '/home/httpd/cgi-bin/chilibot/chili_psql.pm'; 
+require '/home/httpd/cgi-bin/chilibot/chili_sent.pm';
+require '/home/httpd/cgi-bin/chilibot/chili_pare.pm';
+require '/home/httpd/cgi-bin/chilibot/chili_splt.pm';
+require '/home/httpd/cgi-bin/chilibot/chili_synp.pm';
+require '/home/httpd/cgi-bin/chilibot/chili_strg.pl';
+require '/home/httpd/cgi-bin/chilibot/chili_insubs.pl';
+#require '/home/httpd/cgi-bin/chilibot/chili_usability.pl';
+
+
+my $cgi= new CGI;
+print $cgi->header();
+	
+#print "<meta http-equiv=\"refresh\" content=\"1\"; URL=\"$result\">";
+
+if ($ENV{"REMOTE_ADDR"} =~/130.209.6./ ) {
+	print " please contact Hao Chen for running large batch queries";
+	exit;
+}
+
+my $user="terms";
+my $name=int(rand(1000)*10);
+$homedir="/home/httpd/html/chilibot/$user";
+$project="/home/httpd/html/chilibot/$user/$name";
+unlink("$homedir/.jobs");
+
+my @list=split (/\n/, $listin);
+$contextfile="$homedir/$name/context";
+open (CTX, ">$contextfile");
+print CTX $context;
+$synpkeyfile="$homedir/$name/synopkey";
+open (SYNOPK, ">$synpkeyfile");
+print SYNOPK $synopkey;
+
+my $term1=$cgi->param('term1');
+my $term2=$cgi->param('term2');
+
+@terms=($term1, $term2);
+
+# for  usability study 
+
+#& usability("terms", "init", "$name","default\@chilibot.net", "$term1\n\t$term2");
+
+mkdir ($homedir."/".$name);
+mkdir "/home/httpd/html/chilibot/$user/$name/html";
+$inputfile="$homedir/$name/input";
+open (OINPUT, ">$inputfile");
+foreach (@terms) {
+	chomp($_);
+	$_=~s/^\s+|\s+$//g; #extra spacing
+	next if ($_ =~ /^\s*$/);
+	$_=~s/ +/ /g;
+	print OINPUT "$_\t\n"; 
+}
+
+close (OINPUT);
+print "$htmlhead <h2>", uc($term1), " & ", uc($term2), "</h2>\n";
+$synlist=&get_syno("$name", 1);
+#print "xx .... --> $project/synlist\n";
+#$synlist=&get_syno("$name", 1);
+my $min_abs_term	=1;
+my $min_abs_pair	=1;
+my $max_abs		=100;
+my $nodecolor		="green";
+my $project=$homedir."/".$name;
+open (SYNLIST, ">$project/synlist")|| die;
+print SYNLIST "$synlist";
+$synlist=~s/\n/\015\012/g;
+$email="default\@chilibot.net";
+$fname="term";
+$update_query=1;
+$nodecolor="green";
+&funstarts ($user, $email, $fname, $name, $min_abs_term, $min_abs_pair, $max_abs, $update_query, $nodecolor, 2, 0, 1);
+
+$result="$project/html/two.html";
+
+open(RES, "$result") || print "missing result page"; 
+
+while (<RES>){ 
+	print "$_"; 
+}
+
+

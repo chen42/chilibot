@@ -1,0 +1,185 @@
+#!/usr/bin/perl
+use DBI;
+use CGI qw(:standard);
+use CGI::Carp; #qw(fatalsToBrowser);
+use Digest::MD5 qw(md5_hex);
+
+#require '/home/httpd/cgi-bin/chilibot/chili_strg.pl';
+
+my $cgi= new CGI;
+$|=1;
+
+if (cookie('chocolnuts')){
+	$user=cookie('chocolnuts');
+	($fname, $email)=&fname_email($user);
+} else {
+	$user=md5_hex("default\@chilibot.net");
+}
+
+$the_cookie = cookie(-name=>'chocolnuts',
+	     -value=>$user, 
+		 -path=>'/cgi-bin/chilibot/',
+		 -expires=>'+1d');
+print header(-cookie=>$the_cookie);
+
+if ($cgi->param('onelist')){
+	&onelistform($fname, $email);
+}elsif ($cgi->param('twolists')){
+	&twolistsform($fname, $email);
+} else {
+	print "$htmlcss Please specify which search option to use";
+}
+
+
+sub fname_email {
+	$user=shift;
+	my ($dbhandle) = DBI->connect( 'dbname=chilibot', 'hao', '', 'Pg' )
+or die $DBI::errstr;
+	my (@row);
+	my $search = $dbhandle->prepare("SELECT email, fname FROM users where uname='$user';");
+	$search->execute();
+	while (@row = $search->fetchrow_array()){
+		($email, $fname) = @row;
+	}
+
+	return ($fname, $email);
+}
+
+sub onelistform {
+	my	$fname=shift;
+ 	my	$email=shift;
+print <<ONE1;
+<html> <head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<link rel=stylesheet href="/chilibot.css" type="text/css">
+</head>
+<p> <h2>Search for relationships between a list of terms from PubMed abstracts</font> </h2> 
+<img src=/chilibot/images/pairwise.png> <p>
+ONE1
+ 
+if ($email) {
+	print "<div class=\"instruction\">User $fname($email) logged in. </div>";
+}else {
+	print "<div class=\"instruction\">Using public account. | <a href=/loginout.html>Log in</a> | <a href=/cgi-bin/chilibot/createuser.cgi>New account</a> </div> ";
+}
+
+print <<ONE2;
+<form method="post" action="/cgi-bin/chilibot/chilibot.cgi?NEW=t" enctype="application/x-www-form-urlencoded">
+<table>
+	<tr><td> <b>Query Name: &ensp; </b> <input name="name" size="35" type="text">
+	<br><font size=-1>(optional)</font>
+
+ONE2
+
+if ($email){
+	print "<input type=hidden name=\"email\" value=$email type=\"text\"></td></tr>";
+
+	} else{
+	print"</td></tr> <tr><td> <b>Email address:</b>	<input name=\"email\" size=\"35\" type=\"text\">\n<br> <font size=-1> (if > 5 terms are queried)</font>
+	</td></tr>";
+
+}
+
+print <<ONE3;
+ <tr><td> 
+		<b>Advanced options:</b><input type="checkbox" name="advopt"> 
+<br><font size=-1> <a href="/main.right.html#advopt">read more</a> </font> </td></tr>
+<p>
+<tr><td >
+	<b> Please provide 2-50 <a href=/manual.html#term>terms</a>. <font color=red>One term per line.</font> For example:</b> <br>		
+			
+<pre>
+Apoptosis
+TrkB
+BDNF
+Nur77
+</pre>
+	<textarea name="list" rows="25" cols="70"></textarea><br>
+	<input name="IN" value="Search" type="submit">
+</td></tr>			
+</table>
+</form>
+ONE3
+}
+
+sub twolistsform {
+	my $fname=shift;
+	my $email=shift;
+
+	print <<TWO1;
+<html> <head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<link rel=stylesheet href="/chilibot.css" type="text/css"> </head>
+<p>
+<h2>Search for relationships between two lists of terms from PubMed abstracts </font> </h2> 
+<img src=/chilibot/images/twolists.png> <p> 
+TWO1
+
+	if ($email) {
+		print "<div class=\"instruction\">User $fname($email) logged in. </div>";
+	}else {
+
+	print "<div class=\"instruction\">Using public account. | <a href=/loginout.html>Log in</a> | <a href=/cgi-bin/chilibot/createuser.cgi>New account</a> </div> ";
+	}
+
+print <<TWO2;
+
+<form method="post" action="/cgi-bin/chilibot/chilibot.cgi?NEW=t" enctype="application/x-www-form-urlencoded">
+<p>	
+<table>
+	<tr><td colspan=2> <b>Query Name: &ensp;</b>
+		<input name="name" size="35" type="text"> 
+		<br>
+	<font size=-1>(optional)</font> 
+TWO2
+
+if ($email){
+	print "<input type=hidden name=\"email\" value=$email type=\"text\"></td></tr>";
+	} else{
+	print"</td></tr> <tr><td colspan=2> <b>Email address:</b>
+	<input name=\"email\" size=\"35\" type=\"text\" value=$email> 
+	<br> <font size=-1> (if > 5 terms are queried)</font>
+		</td></tr>";
+}
+
+print <<TWO3;
+	<tr><td colspan=2> <b>Advanced options:</b>
+		<input type="checkbox" name="advopt"> 
+	<br> <font size=-1> <a href="/main.right.html#advopt">read more</a> </font> 
+		<input type="hidden" name="twolists" value="1">
+		</td>
+	</tr>
+
+
+	<tr><td colspan=2><center><font color=red>One term per line.</font></center></td></tr> 
+	<tr><td width=50% valign=top><b>List 1</b><br> 
+			1-20 <a href=/manual.html#term>terms</a> pairwisely searched, and against each term in list 2. e.g.:		
+<pre>Apoptosis	
+Cancer </pre></td>
+
+		<td width=50%>
+			<b> List 2 </b> <br>1-100 <a href=/manual.html#term>terms</a> searched against each term in list 1, but not against each other. e.g.: 		
+<pre>TrkB 	
+creb </pre>
+	</td>
+</tr>
+
+	
+	<tr>
+		<td style="border: 1pt solid #a0a0a0;" width=50%>
+			<textarea name="list1" rows="25" cols="40"></textarea><br>
+	</td>	
+		<td style="border: 1pt solid #a0a0a0;" width=50%>
+		<textarea name="list2" rows="25" cols="40"></textarea>
+		</td></tr>
+
+<tr><td colspan=2>
+	<input name="IN" value="Search" type="submit">
+</td></tr>
+
+</table>
+
+</form>
+TWO3
+
+}

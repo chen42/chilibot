@@ -1,0 +1,97 @@
+<html>
+<head>
+
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+
+<style type="text/css">
+
+body {
+        background-color: #ecf8ff;
+        color: black;
+}
+
+BODY {
+		background-color:#ecf8ff; 
+        font-family: Verdana, sans-serif;
+}
+
+A:link {text-decoration: underline; color:darkblue}
+A:visited {text-decoration: underline; color:darkblue}
+A:hover {text-decoration: underline; color: #000099}
+
+table {
+        border-collapse: collapse;
+}
+tbody {
+        background: #f0f0f0;
+}
+
+td {
+        border: 1pt solid #a0a0a0;
+        padding: 3px;
+}
+
+.instruction {font-family:monospace; color:black; font-size:11pt}
+.warning {font-family:monospace; color:red; font-size:11pt}
+
+</style>
+
+</head>
+<p>
+
+<h2>Search for relationships between two lists of terms from PubMed abstracts </font> </h2> 
+<img src=/chilibot/images/twolists.png>
+<p>
+
+<form method="post" action="/cgi-bin/chilibot/chilibot.cgi?NEW=t" enctype="application/x-www-form-urlencoded">
+<p>	
+
+
+<table>
+	<tr><td> <b>Query Name: </b> <br><font size=-1>(optional)</font> </td>
+		<td><input name="name" size="32" type="text"></td>
+	</tr>
+	<tr><td> <b>Email address:</b> <font size=-1> (required for unregistered users <br>when searching for > 5 terms)</font></td>
+		<td> <input name="email" size="32" type="text"> </td>
+	</tr>
+	<tr><td> <b>Advanced options:</b><br><font size=-1> <a href="/chilibot/main.right.html#advopt">read more</a> </font> </td>
+		<td><input type="checkbox" name="advopt"> </td>
+	</tr>
+	<tr>
+		<td colspan=2><input type="hidden" name="twolists" value="1"> </td>
+	</tr>
+
+
+	<tr><td colspan=2><center><font color=red>One term per line.</font></center></td></tr> 
+	<tr>
+		<td style="border: 1pt solid #a0a0a0;" width=50%>
+			
+			<b>List 1</b><br> 
+			1-20 <a href=/chilibot/manual.html#term>terms</a> pairwisely searched, and against each term in list 2. e.g.:		
+<pre>Apoptosis	
+Cancer </pre></td>
+
+		<td style="border: 1pt solid #a0a0a0;" width=50%>
+			<b> List 2 </b> <br>1-100 <a href=/chilibot/manual.html#term>terms</a> searched against each term in list 1, but not against each other. e.g.: 		
+<pre>TrkB 	
+creb </pre>
+	</td>
+</tr>
+
+	
+	<tr>
+		<td style="border: 1pt solid #a0a0a0;" width=50%>
+			<textarea name="list1" rows="25" cols="40"></textarea><br>
+	</td>	
+		<td style="border: 1pt solid #a0a0a0;" width=50%>
+		<textarea name="list2" rows="25" cols="40"></textarea>
+		</td></tr>
+
+<tr><td colspan=2>
+	<input name="IN" value="Search" type="submit">
+</td></tr>
+
+</table>
+
+</form>
+

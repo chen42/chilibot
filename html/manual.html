@@ -1,0 +1,249 @@
+<html>
+<head>
+<style type="text/css">
+h1, h2, h3, h4, h5, h6 {
+  color: #527bbd;
+  font-family: sans-serif;
+  margin-top: 1.2em;
+  margin-bottom: 0.5em;
+  line-height: 1.3;
+}
+
+h1 {
+  border-bottom: 2px solid silver;
+}
+h2 {
+  border-bottom: 2px solid silver;
+  padding-top: 0.5em;
+}
+
+hr {
+  border: 1px solid silver;
+}
+
+p {
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
+}
+
+pre {
+  padding: 0;
+  margin: 0;
+}
+
+BODY {
+		background-color:#ecf8ff; 
+        font-family: Verdana, sans-serif;
+}
+
+A:link {text-decoration: underline; color:darkblue}
+A:visited {text-decoration: underline; color:darkblue}
+
+table {
+        border-collapse: collapse;
+}
+tbody {
+        background: #f0f0f0;
+}
+
+td {
+        border: 1pt solid #a0a0a0;
+        padding: 3px;
+}
+</style>
+</head>
+
+<p>
+ <center> <b><font size=+2>Chilibot user manual</font></b> </center><p>
+<h2>Introduction</h2>
+ Chilibot is a specialized search software for the <a href=http://www.PubMed.org>PubMed</a> literature database. It is designed for rapidly identifying relationships between genes, proteins, or any keywords that the user might be interested. <p>
+ In contrast to the PubMed interface where results are organized based on articles, Chilibot directly presents the key information user is seeking, i.e. sentences containing both of the terms. These sentences are organized into different relationship types based on linguistic analysis of the text. <p>
+ In addition, Chilibot is especially suited to batch process large number of terms (e.g. microarray results). The relationships are summarized into as a graph, with links to sentences describing the relationships, as well as the terms themselves. <p>
+ Many advanced options are available, including <a href=#colorcoding>color coding the terms</a>, <a href=#editsyn>editing the synonyms</a> (e.g. gene/protein names), and <a href=#context>context restricted search</a>. It also automatically <a href=#hypo>suggests new hypotheses</a> based on information in the literature. Therefore, <b>we recommend using Chilibot whenever you are searching <i> relationships  from PubMed </i>(i.e. putting two keywords in the PubMed search box).</b> Some examples of <a href=#twoterms>"two term search"</a> to rapidly retrieve information include:<p>
+	 <pre>
+	 BDNF & TRKB  (what is the relationship between these two proteins?)
+	 BDNF & apoptosis (What is the relationship between a protein and a keyword?) 
+	 BDNF & hippacampus (Is BDNF expressed in the hippocampus?)
+	 BDNF & phosphorelation 
+	 BDNF & polymorphism
+ </pre><p>
+<p>
+ The following more advanced example queries the pairwise relationships among ten genes, and that for each of the gene with 3 keywords (note the special keyword <a href=#list2>SECONDLIST</a>), with user supplied additional synonyms. This example uses the pairwise search function to do a two-list search. We have provided <a href=/chilibot/twolists.html target=new>a simpler interface for two-list search for begining users.<p>
+<p>
+	 <a name="2ndlist"> <pre>
+	 BDNF
+	 TRKB
+	 TRKC
+	 CHRNA7
+	 PSD95
+	 CREB
+	 HPRT
+	 ARC
+	 NUR77
+	 SECONDLIST
+	 APOPTOSIS (programed cell death; PCD)
+	 Hippocampus
+	 STEM CELLS
+ </pre> </a><p>
+<h2>Registration</h2>
+ We try to make it as easy as possible for users to use Chilibot. Therefore, registration is not required. Unregistered users have access to the same functionality as registered users. By registering, user provide us an identity so that we can keep their results separate from others; they do not need to type in their email address for queries with more than five terms; they have passwords to protect their results from other users. In addition, registered users can keep their results as long as they'd like to, while results for unregistered users are deleted after a month to conserve disk space.<p>
+<p>
+<h2>User input </h2>
+<p>
+<h3><a name="term">Accepted terms</a></h3>
+ Chilibot accept two types of terms: a) gene / protein symbols. Due to the large number of synonyms for gene / proteins, the best option is the official symbols for each model organism. Other symbols works as well but may find less information. b) keywords. You can use any keywords but be aware that short acronyms may have many different meanings. To avoid ambiguity, you can provide the acronym as well as the full name (see <a href=#usersyn> user defined synonyms</a> for details.) <p>
+<p>
+<h3><a name="colorcoding">Color coding the nodes</a></h3>
+ The default node color is cyan. You can change that by adding a number to each term. <p>
+<pre>Example:
+BDNF	0.4
+TRKB	1.3
+APOPTOSIS 1.0
+</pre>
+<p>
+Numbers > 1 correspond to varying shades of  green, while numbers between 0 and 1 correspond to different shade of red. Only folds (i.e. positive numbers) are allowed. Negative numbers, usually log(FoldChange), can be converted into folds by taking its antilog.<p>
+ <img src="/chilibot/images/colorcoding.png"><p>
+<p>
+<h3><a name="usersyn">Customizing synonyms</a></h3>
+ You can provide synonyms of your own for Chilibot to use. All synonyms are combined using Boolean "OR" before querying PubMed. To supply synonyms, put them on in parenthesis after the term but in the same line. You can use ';' to separate different synonyms. For example:<p>
+	 <pre>
+	 APOPTOSIS (programed cell death; PCD)
+ </pre><p>
+<p>
+<h2>Types of search</h2>
+<h3><a name="twoterms">Two term search </a></h3>
+ This is the most simple form of Chilibot search. It retrieves sentences describing the relationship between two terms. <p>
+<p>
+<h3>One list pairwise search</h3>
+ <img src="/chilibot/images/pairwise.png"><p>
+ Pairwise queries are exhaustive searches of all possible relationships between any two terms in a list. <p>
+<p>
+<h3><a name="twolists">Two-list search</a></h3>
+ <img src="/chilibot/images/twolists.png"><p>
+ Chilibot defaults to conduct pair-wise queries. Sometimes, users are interested in one-to-many type of relationships. For example, a user wants to find the relationship between one term (e.g. polymorphism) and a list of genes. The interaction between the genes are non-relevant. The two lists search is a variant of the pairwise search in that it accepts two lists. Terms in the first list will be pairwisely searched against each other. List one terms also is searched against each term in list 2. However, terms in list 2 are not searched against each other. This can be done using the two list search boxes. Alternatively, you can use the pairwise search box, just separate your two lists with the special keyword 'SECONDLIST' (<a href="#2ndlist">example</a>).   <p>
+<p>
+<h3><a name="context">Context restriction</a></h3>
+ Chilibot defaults to search the entire PubMed for relationships. However, users may wish to restrict the search to a subset of PubMed to increase the relevance of the results. <p>
+ For example, we want to know if the polymorphism of a list of gene is associated with a particular disease. We can then do a two list search (context = disease name; list 1= polymorphism; list2=list of genes). Of course, you can also include phosphorelation, glycosylation, etc in your list. (see examples <a href=/chilibot/examples.html#cocainearray" target= new>here</a> and <a href=/chilibot/examples.html#chr11>here</a>)   <p>
+ This can be achieved by provide a few keywords in the 'context keyword' box. Chilibot then ignores abstracts that do not contain these keywords. If multiple keywords are provided, please connect them with Boolean operators. <p>
+<p>
+<h3><a name="modulation">Modulation</a></h3>
+"Modulate" or "Modulation" are special keywords in Chilibot. When they are used, Chilibot searches for words such as 'inhibition', 'stimulation', 'increase', 'reduce', etc. that are indicative of regulatory relationships. This is very useful if you are interested in finding genes or proteins that have regulatory relationship with your keyword (or protein) but you don't know what they are. For example, you want to know "Which gene is involved in synaptic plasticity". You can <a href=#context">restrict the context </a> to "gene OR protein" and search for the relationship between "synaptic plasticity" and "modulation". This will then search for abstracts containing gene/protein, and find sentences that have 'synaptic plasticity' and keywords indicative of modulation (e.g. inhibition, stimulation, phosphorylation ...). You can then read the sentences and find the name of genes. And yes, we are working on a function that will give you the list automatically.<p>
+
+<p>
+<h2>Working with the results</h2>
+<h3>Basic navigation </h3>
+ The results are presented to the user as a summary graph, with square boxes representing the queried terms and lines between the boxes representing the relationships. There is an icon (circles or rhomboids) in the middle of each line, representing the different kind of relationships. Clicking on the boxes  will open a portal site for the represented term. Clicking on the circles/rhomboids will bring up sentences describing the relationships.<p>
+<p>
+<h3>Re-graphing</h3>
+ We providing several methods for the user to re-organize the graph, including selectively exclude some less significant relationship types. Users can also generate sub-network graphs focused on one selected node and all its connections. The procedure is to click on the node to bring up the portal page of the node (on the right side). Then, click on the 'Draw simple graph in radiant' combination will bring up the new graph on the left side of the screen. Other options available include more complicated sub-network graph and different graph layout algorithms. <p>
+<p>
+<h3><a name="hypo">Generating hypotheses </a></h3>
+The process of generating a hypothesis is based on the results that a particular node (A) has no direct relationship with node C. But A is directly connected to at least one other nodes (e.g. B), which directly connects to C. The system then hypothesize that A-C has a relationship. To generate hypotheses for any term, click on the node in any graph to bring up the portal page of the node. Then, click on the 'TERM might be related to ..' button. <a href=/examples.html#hypo>Example</a> <p>
+<p>
+<h3><a name="editsyn">Editing the synonyms</a></h3>
+ The optimal use of synonyms is critical to the overall performance of Chilibot. Chilibot provides a list of synonyms that are collected from several genomic/proteomic databases. Nomenclatures are semi-manually curated before compiled into a large database but it may not fit with your needs. Thus, all synonyms are provided to the user before the queries are conducted and can be edited at that time. However, if you are searching for a large number of terms, it is not practical to manually verify all the synonyms. In that case, you can just hit the "next" button and let our algorithm do the job. After the query is done, you can review the texts (sentences, with the synonyms highlighted). If you find a particular synonym is causing multiple false relationships, you can click on the "Edit synonym / update session" button to edit the synonyms. The query will be updated after you hit the "next" button.<p>
+ Names with less than three letters are particularly prone to errors. Thus, we flagged some of them with "!". These flagged names are excluded from the query by default. You can include them in the query by deleting the exclamation mark. <p>
+<p>
+<h3>Deleting relationships </h3>
+ If for some reason the automatically identified relationship is not interesting to the user (either erroneous or accurate but not relevant), it can be deleted. Deleted relationships can not be restored individually. However, if the the user elect to use the 'edit synonym/update session' function, the deleted relationships may re-appear. We plan to make that an option instead of a default behavior in the next version.  <p>
+<p>
+<h2>Automating your searches</h2>
+ This new version of Chilibot is compatible with some limited scripting functionality. The following simple example searches the relationship between three terms.<p>
+	 <table><tr><td> <pre>	 
+
+#!/usr/local/bin/perl
+use LWP::Simple qw(get);
+
+# Provide your email address so that you receive a notification when a query is done (if more than 6 terms are queried).
+
+my $email="me\@my.domain";
+
+#my $sessionName="testing"; # session name is optional
+
+my $terms="apoptosis\ncreb\nbdnf\n";
+
+&searchChilibot ($email, $sessionName, $terms);
+
+sub searchChilibot{
+	my $email=shift;
+	my $sessionName=shift;
+	my $terms=shift;
+	my $url="http://www.chilibot.net/cgi-bin/chilibot/chilibot.cgi?email=$email&IN=t&list=$terms&name=$sessionName";
+	print "Waiting for Chilibot response (may take a while) ..\n";
+	my $response=get ($url);
+	if ( $response=~m|Done!.+?&lt;a href=(.+index\.html)|){
+		print "search is done: http://www.chilibot.net$1\n";
+	}
+	if ($response=~m|&lt;div *class=\"warning\"&gt;(.*)&lt;/div&gt;|){
+		print "error:$1\n";
+	}
+}
+
+
+<h3></pre> </td></tr></table> </h3>
+<p>
+
+
+<h2>Publication </h2> <p>
+<p>
+<b>Chen H and Sharp BM.Content-rich biological network constructed by mining PubMed abstracts.</b> <i>BMC Bioinformatics. 2004 Oct 8;5:147</i> <a href="http://www.biomedcentral.com/1471-2105/5/147" target="new">[Full text]</a> </ul><P> </font>
+<h3>Cited in: </h3>
+<p>
+<li> Mudunuri U, Stephens R, Bruining D, Liu D, Lebeda FJ. botXminer: mining biomedical literature with a new web-based application. Nucleic Acids Res. 2006 Jul 1;34(Web Server issue):W748-52. 
+<li> Hunter L, Cohen KB. Biomedical Language Processing: What's Beyong PubMed?. 
+Mol. Cell. 2006 Mar 3;21(5):589-94.
+<li> Li H, Chen H, Bao L, Manly KF, Chesler EJ, Lu L, Wang J, Zhou M, Williams 
+RW, Cui Y. Integrative genetic analysis of transcription modules: towards 
+filling the gap between genetic loci and inherited traits.
+Hum Mol Genet. 2006 Feb 1;15(3):481-92. <a href=http://www.ncbi.nlm.nih.gov/entrez/query.fcgi?cmd=Retrieve&db=pubmed&dopt=Abstract&list_uids=16371421&query_hl=10&itool=pubmed_docsum target=_new>PubMed</a></li>
+
+<li> Douglas SM, Montelione GT, Gerstein M.  PubNet: a flexible system for 
+visualizing literature derived networks.  Genome Biol. 2005;6(9):R80. </li>
+
+<li>Weeber, M., Kors, J.A., Mons, B. (2005) Online tools to support
+literature-based discovery in the life sciences Briefings in Bioinformatics 6
+(3), pp. 277-286</li>
+
+<li>Skusa, A., Rüegg, A., Köhle(2005) Extraction of biological interaction
+networks from scientific literature Briefings in Bioinformatics 6 (3), pp.
+263-276</li>
+
+<li>Scherf, M., Epple, A., Werner, T. (2005) The next generation of literature
+analysis: Integration of genomic analysis into text mining Briefings in
+Bioinformatics 6 (3), pp. 287-297</li>
+
+<li>Buckingham SD. (2005) Data mining for protein-protein interactions in
+invertebrate model organisms.  Invert Neurosci. 5(3-4):183-7. </li>
+
+<li>Martin Krallinger and Alfonso Valencia (2005). Text-mining and
+information-retrieval services for molecular biology. Genome Biology, 6:224
+</li>
+
+<li>Henk Harkema, Ian Roberts, Rob Gaizauskas, and Mark Hepple (2005) A web
+service for biomedical term look-up. Comparative and Functional Genomics Volume
+6, Issue 1-2 , Pages 86 - 93</li>
+
+<li>Kerns RT, Ravindranathan A, Hassan S, Cage MP, York T, Sikela JM, Williams
+RW, Miles MF (2005) Ethanol-responsive brain region expression networks:
+implications for behavioral responses to acute ethanol in DBA/2J versus
+C57BL/6J mice. J Neurosci. 25(9):2255-66.</li>
+
+<li>Hoffmann R, Krallinger M, Andres E, Tamames J, Blaschke C, Valencia A.
+(2005) Text mining for metabolic pathways, signaling cascades, and protein
+networks. Sci STKE. (283):pe21.</li>
+
+<li>Parslow, Websites of Note, Biochemistry and Molecular Biology Education.
+2005; 33: 310-312.</li>
+
+<li>Nikolsky Y, Nikolskaya T, Bugrim A. Biological networks and analysis of
+experimental data in drug discovery. Drug Discov Today. 2005 May
+1;10(9):653-62.</li>
+
+<li>Jorg Hakenberg, Conrad Plake, Ulf Leser Harald Kirsch, and Dietrich
+Rebholz-Schuhmann. LLL'05 Challenge: Genic Interaction Extraction -
+Identification of Language Patterns Based on Alignment and Finite State
+Automata. Proceedings of the 4 th Learning Language in Logic Workshop (LLL05),
+Bonn, Germany, 2005.</li>
+
+<p>

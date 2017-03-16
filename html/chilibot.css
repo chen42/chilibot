@@ -1,0 +1,33 @@
+
+<style type="text/css">
+
+body {
+        background-color: #ecf8ff;
+        color: black;
+}
+
+BODY {
+		background-color:#ecf8ff; 
+        font-family: Verdana, sans-serif;
+}
+
+A:link {text-decoration: underline; color:darkblue}
+A:visited {text-decoration: underline; color:darkblue}
+
+table {
+        border-collapse: collapse;
+}
+tbody {
+        background: #f0f0f0;
+}
+
+td {
+        border: 1pt solid #a0a0a0;
+        padding: 3px;
+}
+
+.instruction {font-family:monospace; color:black; font-size:11pt}
+.warning {font-family:monospace; color:red; font-size:11pt}
+
+</style>
+
