@@ -23,7 +23,10 @@ $project=~s/\/$//;
 open (IN, "$project/gdl") || die "failed to open $project/gdl ";
 @old=<IN>;
 @select= grep {/edge/} @old; 
-print  "$htmlbody \n<center><h3>Chilibot Session: $folder</h3>\n$thetable</center>\n<p>";
+
+print  "$htmlcss \n<font size=-1><a href=\"/index.html\" target=_TOP>Chilibot</a> | <a href=/index.html target =_top >New Search</a> | \n <a href=/cgi-bin/chilibot/chilibot.cgi?PREV=t target=_top>Saved Searches </a>|\n </font></p> <center> <h3>$folder</h3></center>";
+
+
 #get node color
 @nodes=grep {/node/} @old;
 foreach (@nodes){
@@ -60,9 +63,8 @@ foreach $first (@firstTier){
 
 @keys= sort {($chainWeight{$b}) <=> ($chainWeight{$a})} (keys %chainWeight);
 if (@keys){
-	print "<p><b><center>New Hypothesis for $symb</center></b><p>(There is no documentation about the relationship between the two terms highlighted in the red boxes. However, their interaction is suggested by their common connections to other term(s)<p>\n";
+	print "<center>New Hypothesis for $symb | <a href=\"/chilibot/$user/$folder/html/left.html\">Back to Main Graph</a></center><p>\n <p>There is no documentation about the relationship between the two terms highlighted in the red boxes. The new hypothesis is that these terms interact through their shared connections to other term(s)<p>\n";
 
-print "<p align=center><a href=\"/chilibot/$user/$folder/html/left.html\">Back to Main Graph</a><p>";
 	foreach (@keys){
 #		print "$chain{$_}<br>\n";
 			$chain{$_}=~s/, $//;
@@ -72,10 +74,9 @@ print "<p align=center><a href=\"/chilibot/$user/$folder/html/left.html\">Back t
 			&generateGraph($hypo, $term1, $term2, @links);
 	}
 } else {
-	print "<p><font color=blue><b>New Hypothesis for $symb:</b><p>Nothing is new under the Moon.</font>";
+	print "<p> $symb is fully connected and no new hypothesis can be generated.<p><a href=\"/chilibot/$user/$folder/html/left.html\">Back to Main Graph</a><p>";
 }
 
-print "<p align=center><a href=\"/chilibot/$user/$folder/html/left.html\">Back to Main Graph</a><p>";
 
 
 sub generateGraph{

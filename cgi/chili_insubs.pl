@@ -1,73 +1,55 @@
 #!/usr/bin/perl 
 
-use LWP::Simple qw(get);
+use LWP::UserAgent;
 use CGI qw(:standard);
 use CGI::Carp qw(fatalsToBrowser);
-use POSIX 'setsid';
+use Proc::Daemon;
 use Digest::MD5 qw(md5_hex);
-
 require '/home/httpd/cgi-bin/chilibot/chili_subs.pl';
-require '/home/httpd/cgi-bin/chilibot/chiliale.pl';
-#require '/home/httpd/cgi-bin/chilibot/chili_usability.pl';
-require '/home/httpd/cgi-bin/chilibot/chili_daem.pl';
 
-$msg[0]="you've been working in front of me for too long. Why don't you take a little walk? You may need a fresh mind to read what I find for you.";
-$msg[1]="I heard they say \"A cup of green tea a day, keep the doctors away\". Why don't you make yourself a cup? There are some tea bags in your boss' draw. Please feel free to help yourself. ";
-$msg[2]="the boss is not here, don't work too hard. Take a break!";
-$msg[3]="do you think artificial intelligence will ever match human stupidity?";
-$msg[4]="I can tell you how to build me in 993 easy steps if you care to listen.";
-$msg[5]="my life may have no meaning. What makes it worse is that it may have a meaning of which I disapprove."; 
-$msg[6]="you've just got some mails. No, no, no, not email. I mean Mail. Go check it out!"; 
-$msg[7]="conficious once told me that crowded elevator smells different to midget."; 
-$msg[8]="your dentist asked you to call him back while your were away. Why not make the phone call right now?";
-$msg[9]="you boss left a message that the light at the end of the tunnel has been turned off due to budget cuts.";
-$msg[10]="do you think humanity is worth saving?" ;
-$msg[11]="Chilibot is hungry and demands to be fed.";
-$msg[12]="Chilibot stronly dislikes your boss.";
-$msg[13]="you really don't know how to challenge Chilibot.";
-$msg[14]="the easiest way to double your harddrive space is to delete M\$windows? Give it a try and you'll see.";
-$msg[15]="don't take life too seriously, you won't get out alive.";
-$msg[16]="Hard work has a future payoff. Laziness pays off now.";
-$msg[17]="I once summerized human very well: 'A little work, a little sleep, a little love and it is all over.'";
-$msg[18]="my brain just hit a bad sector. Do you mind wait 3.1416 circles before I send your results back? ";
-$msg[19]="do you know that creative Chinese chef without untensiles can still find ways to stir soup? ";
-$msg[20]="why is the third hand on the watch called a second hand?";
-$msg[21]="why is it that doctors call what they do \"practice\"?";
-$msg[22]="conficious once told me constipated people don't give a crap. What do you think?";
+sub browser{
+  my $url=shift;
+  my $ua = LWP::UserAgent->new;
+  my $req = HTTP::Request->new(GET => "$url");
+  my $res = $ua->request($req);
+  sleep 2;
+  if ($res->is_success) {
+      $xml=$res->as_string;
+  } else {
+      print "Failed to connect to NCBI: ", $res->status_line, "\n";
+	  exit;
+  }
+  return $xml;
+}
 
 
 sub getAbstract {
-	sleep 3 if ($standalone != 2);
 	my $pmids=shift;
 	my $tiab;
-	#print "getting $pmids<br>";
-	my $retrieve=get("http://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=$pmids&retmode=xml&rettype=citation&tool=fetchAbs");
-	#print "$retrieve\n<br>";
+	my $retrieve=&browser("https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=$pmids&retmode=xml&rettype=citation&tool=fetchAbs");
 	while ($retrieve=~s|(<PubmedArticle>.+?</PubmedArticle>)||si) {
 		my $record=$1;
-		$record=~m|<PMID>(\d+)</PMID>|;
-		my $pmid=$1;
-		$record=~m|(<MedlineTA>.+</MedlineTA>)|s;
-		my $tiab =$1;
-		$record=~m|<PubDate>.*(\d\d\d\d).*</PubDate>|s;
-		$tiab .="<Year>$1</Year>. \n";
-		$record=~m|<ArticleTitle>(.+)</ArticleTitle>|s;
-		my $ti=$1; 
-		$tiab .= "<ArticleTitle>".$ti ."</ArticleTitle> . \n";
-		$record=~m|<AbstractText>(.+)</AbstractText>|s;
-		my $ab=$1;
-		$tiab .= $ab; 
+		#print "$record record\n";
+		my $pmid=$1      if $record=~m|<ArticleId IdType="pubmed">(\d+)</ArticleId>|;
+		my $journal=$1   if $record=~m|<Journal>.+<ISOAbbreviation>(.+)</ISOAbbreviation>.+</Journal>|s;
+		my $ti=$1        if $record=~m|(<ArticleTitle>.+</ArticleTitle>)|s;
+		my $year=$1      if $record=~m|<PubDate>.+<Year>(\d+)</Year>.+</PubDate>|s;
+		my $ab=$1        if $record=~m|<Abstract>(.+)</Abstract>|s;
+		$journal=~s/\.//g;
+		$ab=~s/<Copyright.+?<\/CopyrightInformation>//;
+		$ab=~s/<.+?>|\n//g;
+		my $tiab = "<Journal>$journal<_Journal><Year>$year<_Year>\n$ti\n$ab\n";  # use _ for /
 		$tiab =~s/\-|\+|\[|\]|\/|\{|\}|\'|\"|\:/ /g;
 		$tiab =~s/\d\s*,\s*\d/ /g;
 		$tiab =~s/\(/\( /;
 		$tiab =~s/\)/\) /;
 		$tiab =~s/ +/ /g;
 		$pmid=~s/^0+//;
-		#print "line 47 $pmid, $abstract\n"; 
 		@abs=chili_splt->splitter ($pmid, $tiab);
 	}
 	return 1;
 }
+
 
 sub get_syno {
 	my $name= shift; #session name
@@ -83,15 +65,12 @@ sub get_syno {
 		chomp;
 		$i++;
 		$input[$i]=$1 if ($_ =~ /^(.+)\t/);
-#print "$input[$i], $i<p>";
 		($symb[$i], @syno) = chili_psql->name($input[$i]);
-#print "$symb[$i], @syno <p>";
 		if ($_ =~ /\t(\d*\.*\d+)\s*$/)  {
 			$synlist .="> $symb[$i] (input: $input[$i] userColor: $1)\n";
 		} else {
 			$synlist .="> $symb[$i] (input: $input[$i] )\n";
 		}
-		#print "$input[$i] | ";
 		if ($no_dupli{$symb[$i]}) {
 			undef ($symb[$i]);
 			next;
@@ -102,7 +81,6 @@ sub get_syno {
 		foreach (@syno) {
 			next if ($_=~/^\d+$/); # only contain numbers, is not synonym
 			if (($_ ne "") && ($_ !~ /include|precursor|hypothetical/)) {
-			#	next if (($_!~/\d/) && ($symb[$i] =~/\d/));
 				$_=~ s/^\s+|\s+$//g; #leading or trailing space
 				$_=~ s/\'//g;
 				$synlist .="\t$_\n";
@@ -113,10 +91,8 @@ sub get_syno {
 	}
 
 	if ($standalone){
-		#print "$synlist";
 		return ($synlist);
 	} else {
-		#print "<pre>$synlist</pre> ";
 		$synlist_cnt+=10;
 		print "<p><b>The following synonyms have been retrived. Terms marked with an<font color =red> !</font> are excluded from the analysis by default. This list directly impacts the accuracy of the final results provided by Chilibot. Please edit as you see fit. <a href=\"/faq.html#edit\" target=new>What?</a> </b>\n<br>";
 		print start_form, textarea(-name=>'synlist', -wrap=>"off",  -cols=>90, -rows=>$synlist_cnt,  -value =>$synlist), "\n",
@@ -140,59 +116,28 @@ sub funstarts{
 	my $standalone=shift;
 	my $nlp=shift;
 	my $acro=shift;
+	open (LOG, ">$homedir/$name/_log") || die "can't open log file";
 
-	if ($user eq md5_hex("default\@chilibot.net")){
-		$maxjob=15;
-	} else {
-		$maxjob=2;
-	}
-
-	open (JOBS,"$homedir/.jobs");
-	$jobs=<JOBS>;
-	close (JOBS);
-	if ($jobs>$maxjob){
-		print "<center><table width=70%><tr><td><font color=darkblue><p><b>Dear $fname, <p>According to my record, you still have several jobs pending. I can still take this one. However, I'll put it in queue and won't run it until I finish your other jobs. It's hard work. I'll drop you an email once it is done.  Will that be OK?<p>\n <p> Warmly, <p>Chill</b>\n</table></center>";
-		& daemonize ;
-		system("touch /home/httpd/cgi-bin/chilibot/I_am_still_alive");
-	}
-	while ($jobs>$maxjob) {
-		sleep 5;
-		open (JOBS,"$homedir/.jobs");
-		$jobs=<JOBS>;
-		close (JOBS);
-		print "<font color=red><b>You STILL  have more than one job pending<br>\n";
-	}
-	$jobs++;
-
-	open (JOBS,">$homedir/.jobs");
-	flock(JOBS, LOCK_EX);
-	print JOBS $jobs;
-	flock (JOBS,LOCK_UN);
-	close (JOBS);
-#	print " line 173 user: $user, name: $name, synop: $synopsis, minabs $min_abs_term, minabs $min_abs_pair, maxabs $max_abs, update $update_query xx";
-$synopsis =1 if ($user eq "terms");
-
-	$abs_dir="/home/httpd/html/chilibot/ABS";
-	#open (SUM, ">>/home/httpd/html/chilibot/$user/summary");
-	$project=$homedir."/".$name;
-#	system ("echo 1 > $project/status");
+	$synopsis=1 if ($user eq "terms");
+	my $abs_dir="/home/httpd/html/chilibot/ABS";
+	my $project=$homedir."/".$name;
 	my $dir=$project ."/pmid";
 	mkdir("$dir")  if (!-d $dir);
 	$dir=$project ."/html";
 	mkdir("$dir") if (!-d $dir) ;
 	#system ("rm $project/synop*");
-
-$update_query *=24*60*60;
-open (FOLD, "$project/input");
-while (<FOLD>){
-	chomp();
-	$foldData="";
-	($foldSymb, $foldData)=split(/\t+/,$_);
-	$fold{uc($foldSymb)}=$foldData if $foldData;
-	#print "$foldSymb, $foldData<br>\n";
-}
-undef ($foldSymb);
-undef ($foldData);
+	$update_query *=24*60*60;
+	# gene expression data
+	open (FOLD, "$project/input");
+	while (<FOLD>){
+		chomp();
+		$foldData="";
+		($foldSymb, $foldData)=split(/\t+/,$_);
+		$fold{uc($foldSymb)}=$foldData if $foldData;
+		#print "$foldSymb, $foldData<br>\n";
+	}
+	undef ($foldSymb);
+	undef ($foldData);
 
 #== generate AISEE files
 open (AISEE, ">$project/gdl");
@@ -205,13 +150,6 @@ $output = ">$project/index.html";
 open (FRAME, "$output");
 print FRAME $frame;
 close (FRAME);
-
-=cut
-$output = ">$project/html/right.html";
-open (RIGHT, "$output");
-print RIGHT $intro;
-close (RIGHT);
-=cut
 
 # expand search to include synonyms 
 #print "$project";
@@ -238,25 +176,12 @@ while (<SYNLIST>) {
 		print SYNO "$htmlhead </head><font size=+2><b>", $symb[$i], "</b></font><br>";
 		$matchedInput=~s/userColor/Color Code/i;
 		print SYNO " (Input: $matchedInput) <hr>\n";
-		#print SYNO "<center><b>Google Searchs</b></center><p>\n";
-=cut
-		print SYNO "<center> <TABLE   WIDTH=\"95%\" CELLSPACING=0 CELLPADDING=1> <TR bgcolor=\"#ddeedd\"><TD align=left>\n";
-		#print SYNO "<b>Google Searches: </b><a href=/cgi-bin/chilibot/chili_google.cgi?F=$name&Q1=$symb[$i]&T= target=new>Entire Web </a> | ";
-#		print SYNO "<a href=/cgi-bin/chilibot/chili_google.cgi?F=$name&Q1=$symb[$i]&T=edu target=new>EDU domain only </a> | ";
-#		print SYNO "<a href=/cgi-bin/chilibot/chili_google.cgi?F=$name&Q1=$symb[$i]&T=pdf target=new>PDF files only </a>";
-		print SYNO "</TD></TR></TABLE>\n";
-		print SYNO "."; #<center><p>.</center><p>\n";
-=cut
 		print SYNO "<center> <TABLE   WIDTH=\"95%\" CELLSPACING=0 CELLPADDING=1> <TR bgcolor=\"#ddeedd\"><TD align=left>\n";
 		print SYNO "<b>External Links: </b><a href=http://www.ncbi.nlm.nih.gov/entrez/query.fcgi?cmd=search&term=$symb[$i]&db=OMIM target=new>OMIM</a> |\n";
 		print SYNO " <a href=http://www.ncbi.nlm.nih.gov/entrez/query.fcgi?cmd=search&term=$symb[$i]&db=gene target=new>Entrez Gene</a> |\n";
-		print SYNO " <a href=http://ca.expasy.org/cgi-bin/sprot-search-de?$symb[$i] target=new>Swissprot</a> |\n" ;
-#		print SYNO " | <a href=http://bioinfo.weizmann.ac.il/cards-bin/carddisp?$symb[$i]\&search=ntrk2&suff=txt target=new>GeneCards</a>\n" ;
+		print SYNO " <a href=http://www.uniprot.org/uniprot/?query=$symb[$i] target=new>Swissprot</a> |\n" ;
 		print SYNO " <a href=http://www.genecards.org/cgi-bin/carddisp?$symb[$i]&alias=yes target=new>GeneCards</a> |\n";
 		print SYNO "</TD></TR></TABLE>\n";
-#		foreach  (sort hashValDesNum (keys(%synrank))) {
-		#	last if ($synrank{$_} ==0);
-#		}
 		print SYNO "</font><br>";
 	 	print SYNO "</TABLE></center>\n";
 		print SYNO "<center><b>Maps of $symb[$i]</b></center><p>";
@@ -306,11 +231,6 @@ MAP
 			} else {
 				$bgcolor="#ccddcc";
 			}
-			#if ($_=~/(.+)\|REF:(\d+)/i) {
-			#$printSyno= $1;
-			#} else { 
-				$printSyno=$_;
-			#}
 			print SYNO "<TR  bgcolor=$bgcolor><TD><li> $printSyno  <font size=-1 face=helvetica>";
 			$printSyno=~ s/ +/\+/g;
 			print SYNO " <a href=http://eutils.ncbi.nlm.nih.gov/entrez/query.fcgi?cmd=search&term=$printSyno&db=PubMed target=new> [PubMed] </a>  </font>";
@@ -319,18 +239,10 @@ MAP
 	# search pubmed for the symbol
 	$_=~s/ *$//;
 	my $syno=uc($_);
-	#print "$syno <br>";
-#	$synrank{$syno}=$1;
-	#print "$i\n";
 	($replace[$i] .= "\\b" . $syno . "\\b|" ) if ($syno ne $symb[$i]) ; #exclude symb from replace
 	next if length($syno)<3;
-	#my $words=split(/ +/,$syno);
-	#print "$syno $words<br>";
-	#next if ((split(/ +/, $syno)>3) && $syno=~/ \d+$/);
 	$syno=~s/ +/\+/g;
-	#$syno=~s/ +/\[tiab\]\+/g;
 	if ($syno !~/ or | and /i){
-		#$seek[$i] .=  "\%28\"" . $syno. "\"[tiab]\%29";
 		next if $syno=~/^!/;
 		$seek[$i] .=  "\%28" . $syno. "[tiab]\%29";
 	}
@@ -351,32 +263,21 @@ for (0 .. $i) {
 		$seek[$_]="%28activate[tiab]%29+OR+%28facilitate[tiab]%29+OR+%28increase[tiab]%29+OR+%28induce[tiab]%29+OR+%28stimulate[tiab]%29+OR+%28enhance[tiab]%29+OR+%28elevate[tiab]%29+OR+%28inactivate[tiab]%29+OR+%28abolish[tiab]%29+OR+%28abrogate[tiab]%29+OR+%28attenuate[tiab]%29+OR+%28block[tiab]%29+OR+%28decrease[tiab]%29+OR+%28eliminate[tiab]%29+OR+%28inhibit[tiab]%29+OR+%28prevent[tiab]%29+OR+%28reduce[tiab]%29+OR+%28suppress[tiab]%29+OR+%28modulate[tiab]%29+OR+%28phosphorylate[tiab]%29";
 		$replace[$_]="\\bactivat\\w\* |\\bfacilitat\\w\* |\\bincreas\\w\* |\\binduc\\w\* |\\bstimulat\\w\* |\\benhanc\\w\* |\\belevat\\w\* |\\binactivat\\w\* |\\babolish\\w\* |\\babrogat\\w\* |\\battenuat\\w\* |\\bblock\\w\* |\\bdecreas\\w\* |\\beliminat\\w\* |\\binhibit\\w\* |\\bprevent\\w\* |\\breduc\\w\* |\\bsuppre\\w\* |\\bmodulat\\w\* |\\bphosphorylate\\w\* ";
 	}
-	#print "<pre>$_ seek: $seek[$_]<br> replace: $_ $replace[$_]</pre>\n";
 }
 	$term_number=$i;
 
-
-	if ( ($term_number <7) || ($user eq "test") ){
+	if ($term_number <3){
 		if (!$standalone){
 			$rad=int ( rand(19)); 
 			print "<p><center><table width=70%><tr><td><font size=+1 face=courier><br>Dear ", ucfirst($fname),", <p> Your search for relationship is underway, as you can see. <p>BTW, $msg[$rad] <p> Love, <p>Chil</font> </td></tr></table></center>\n" 
 		}
 	} elsif (( $standalone == 0) || ($standalone == 3)){ # let go if batch mode , i.e. standalone =1
-		$daemon=1;
-		print "<p><center><table width=70%><tr><td><font size=+1 face=courier><br>Dear ", ucfirst($fname),", <p> Hmm, it looks like you are hungry for information, but I need a little time to gather that. I'll send you an email once it is ready.  <p> Love, <p>Chil</font> </td></tr></table></center>\n"; 
-		& daemonize;
-		system("touch I_am_still_alive");
+		print "<p><center><table width=70%><tr><td><font size=+1 face=courier><br>Dear ", ucfirst($fname),", <p> Hmm, it looks like you are hungry for information, but I need a little time to gather that. Please check back in about 30 min under the \"Saved Results\" section.  <p> Love, <p>Chil</font> </td></tr></table></center>\n"; 
 	}
 print "<p>";
-#$max_abs=50 if ($term_number<3); # use chilibot as general search engine
-#$input=">$project/cleansymb";
-#open (CLEAN, "$input") || die;
 $input=">$project/statement";
 open (STAT, "$input") || die;
-#print "<b>Retriving abstracts ..</b><br>\n";
-#print "<b><p><hr><font color=darkblue>Please be patient while retriving abstracts from PubMed (<a href=http://www.ncbi.nlm.nih.gov/entrez/query/static/eutils_help.html#UserSystemRequirements target=_new>one request every 3 seconds</a>)</font></b><p>" if (!$standalone);
 my $now = time;
-
 system ("rm $project/synop_*");
 my $contextfile="$project/context";
 if (-e $contextfile) {
@@ -389,46 +290,26 @@ if (-e $contextfile) {
 open (QUERYHIST, ">$homedir/$name/queryhistory.html") || die "can't save query history";
 $start_time=~/(\w+\s+\w+\s+\d+).+(\d\d\d\d)/;
 
-#print QUERYHIST start_html(-title=>'Chilibot: mining PubMed for relationships', -style=>{'src'=>'/chilibot/chilibot.css'});
 print QUERYHIST "$htmlhead </head>\n<b>Query History for $name ($1, $2):</b><br>\n"; 
-#my ($sec, $min, $hour, $mday, $mon, $year, $wday, $yday, $isdst) = localtime (time);
-#$mon++;
-#$yday++;
-#$year=$year+1900;
 
-	open (ST, ">$project/status") || die;
+# progress report
 my $theoretical=($term_number*($term_number+1))/2;
-
-print "Retrieving abstracts .." ; 
+# Retrieving abstracts .." ; 
 for ($i=0; $i<=$term_number; $i++) {
-	#print "\tsymbol: $symb[$i] <br>\n";
-	#print " ", $term_number-$i+1,"->";
-#	system ("echo 1 > $project/status");
 	next if ($seek[$i] eq "");
-	#if ($term_number < 5 ) {
-	#	$refcount=100;
-	#}else {
-	#	$refcount=&countRef($seek[$i]);
-	#}
-#	print  "$term_number, $refcount, $min_abs_term"; 
-	if ($symb[$i] =~ /one2many|chilibot|secondlist/i){
+	if ($symb[$i] =~ /secondlist/i){
 		$i=99999; 
 		print "next";
 		next;
 	}
-	#next if ($refcount<$min_abs_term);
-	#print SUM "\n$symb[0]\t$fold{$symb[0]}\t";
-	#print "i=$i symb=$symb[$i]\n"; 
-
 	for ($j=$i+1; $j<=$term_number; $j++) {
 		next if ($seek[$j] eq "");
 		next if (uc($symb[$j]) eq "SECONDLIST");
 		print " |$symb[$i]/$symb[$j] ";
 		print QUERYHIST "\n<br>";
 		$total_search++;
-		$percent = $total_search/$theoretical*100; 		
-		print ST "$percent\n";
-		#system ("echo $percent > $project/status");
+		$percent = int($total_search/$theoretical*100)-1; 		
+		system ("echo $percent > $project/status");
 		my $ret;
 		my $queryString;
 		$max_abs=100 if ((uc($symb[$i]) eq "MRNA") || (uc($symb[$j]) eq "MRNA"));
@@ -441,29 +322,18 @@ for ($i=0; $i<=$term_number; $i++) {
 			$queryString="http://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&retmax=$max_abs&term=%28$seek[$i]%29+AND+%28$seek[$j]%29+AND+hasabstract";
 		}
 		if ($pubmeddate){
-
 			$queryString .= "&mindate=1960&maxdate=$pubmeddate";
 		}
-#		print "<br> $pubmedate $queryString\n";
 		$md5=md5_hex("$seek[$i]", "$seek[$j]", "$max_abs", "$context" );
-#		print "$seek[$i], $seek[$j], $max_abs, $context\n<br>";
-		#$md5=md5_hex("$seek[$i]", "$seek[$j]", "$max_abs", "$context", "$pubmeddate");
 		$fileCreatedAt=(stat("$homedir/.pmid/$md5"))[9];
 		$fileSize=(stat("$homedir/.pmid/$md5"))[7];
-#		print "created: $fileCreatedAt diff:", $now-$fileCreatedAt, "threshold: $update_query <br>\n";
-		#print "querystring: $queryString\n";
 		if (($now-$fileCreatedAt < $update_query) && ($fileSize>1)) {
-		#	print "use archived<br>\n";
 			open (SAVEDPMID, "$homedir/.pmid/$md5");
 			while(<SAVEDPMID>) {
 				$ret.=$_;
 			}
 		} else {
-			if (-e "$homedir/.pmid/$md5") {
-				#print "now: $now - filecreated $fileCreatedAt > update $update_query\n";
-			}
-			sleep 3 if ($standalone != 2);
-			$ret=get($queryString);
+			$ret=&browser($queryString);
 			print "*";
 			open (PMIDFILE, ">$homedir/.pmid/$md5") || die "can't open file $homedir/.pmid/$md5  to save PMIDs";
 			print PMIDFILE $ret;
@@ -487,7 +357,7 @@ for ($i=0; $i<=$term_number; $i++) {
 		
 		$sampled_lit+=$displaymax{"$i\_$j"};
 #		print " <a href=/chilibot/$user/$name/ssent_$symb[$i]_$symb[$j].html target=new>view sentences </a> " if ($ids);
-		#my $pmid_0= get("http://130.14.29.110/entrez/utils/pmqty.fcgi?db=pubmed&term=%28$seek[$i]%29+AND+%28$seek[$j]%29&dopt=d&dispmax=500");
+		#my $pmid_0= &browser("http://130.14.29.110/entrez/utils/pmqty.fcgi?db=pubmed&term=%28$seek[$i]%29+AND+%28$seek[$j]%29&dopt=d&dispmax=500");
 		my @pmidxml= split (/\015\012?|\012/, $ids);
 		#save pmid list for synopsis 
 		my @pmid;	
@@ -620,6 +490,7 @@ for ($i=0; $i<=$term_number; $i++) {
 	} #for j
 	print STAT "\_endofj\n";
 } #for i
+
 
 if ($available_lit == 0) {
 	print "No relevant literature was found. Exit.<br>";
@@ -899,15 +770,14 @@ while (<POS>) {
 	} else {
 		$output = ">$project/html/$symb[$i]\_$symb[$j].html";
 	}
-	open (RIGHT_H, "$output");
+	open (RIGHT_H, "$output") || die " can't open $output";
 
-	#print RIGHT_H start_html(-title=>'Chilibot: mining PubMed for relationships', -style=>{'src'=>'/chilibot/chilibot.css'});
 	if ( $standalone !=2 ) {
-	print RIGHT_H "$htmlcss \n<center><font size = +1><b>$symb[$i] and $symb[$j]</b></font> </center> <p>";
+		print RIGHT_H "$htmlcss \n<center><font size = +1><b>$symb[$i] and $symb[$j]</b></font> </center> <p>";
 
 	}
 
-	print RIGHT_H "<hr>Analyzed <b>$displaymax{\"$i\_$j\"}</b> ";
+	#print RIGHT_H "<hr>Analyzed <b>$displaymax{\"$i\_$j\"}</b> ";
 	print RIGHT_H " <i>most recent</i> " if  ($displaymax{"$i\_$j"} < $total_abs{"$i\_$j"}) ;
 	print RIGHT_H " abstracts out of ";
 
@@ -933,7 +803,7 @@ PAIRS2
 	}
 
 		print RIGHT_H "<a href=\"/chilibot/$user/$name/html/$symb[$i]\_$symb[$j].all.html\">View all relevant sentences.</a></pre>\n";  
-#print RIGHT_H "-> $foreArrow | <-$backArrow | sti -> $stiDir{\"->\"} sti <- $stiDir{\"<-\"}";
+
 
 #<center><a href=/cgi-bin/chilibot/chili_google.cgi?F=$name&Q1=$symb[$i]&Q2=$symb[$j]&T= target=new> Search <font color=blue>G</font><font color=red>o</font><font color=darkorange>o</font><font color=blue>g</font><font color=green>l</font><font color=red>e</font>  </a>  | <a href=/cgi-bin/chilibot/chili_google.cgi?F=$name&Q1=$symb[$i]&Q2=$symb[$j]&T=pdf target=new> PDF files only </a> | <a href=/cgi-bin/chilibot/chili_google.cgi?F=$name&Q1=$symb[$i]&Q2=$symb[$j]&T=edu target=new> EDU domain only </a></font></center>
 
@@ -976,8 +846,9 @@ print RIGHT_H "<hr>";
 
 			sub printneg {
 					foreach (@weightkeys){
-						next if (!$neg_snt{$_});
-						&print_sentences($_, $symbDist{$_}, $neg_snt{$_}, $direction{$_});
+						if ($neg_snt{$_}){
+							&print_sentences($_, $symbDist{$_}, $neg_snt{$_}, $direction{$_});
+						}
 					}
 			}
 			sub printpos{
@@ -993,7 +864,8 @@ print RIGHT_H "<hr>";
 					&print_sentences($_, $symbDist{$_}, $neu_snt{$_});
 					$printed=1;
 				}
-				print RIGHT_H "<p><li> :-)  " if (!$printed);
+				#print RIGHT_H "<p><li> :-)  " if (!$printed);
+				print RIGHT_H "<p> " if (!$printed);
 			}
 			if (%other_snt){
 				@otherkeys=keys %other_snt;
@@ -1006,8 +878,9 @@ print RIGHT_H "<hr>";
 			undef(%neg_snt);
 			undef(%neu_snt);
 			undef(%other_snt);
+			close (RIHGT_H);
 			#print "total.abs i-$i,j= $j : $total_abs{\"$i\_$j\"}, $displaymax{\"$i\_$j\"}, sntcnt  $snt_cnt ii  <br>";
-#			$linkWeight= (($total_abs{"$i\_$j"}/$displaymax{"$i\_$j"})*$snt_cnt);
+			#$linkWeight= (($total_abs{"$i\_$j"}/$displaymax{"$i\_$j"})*$snt_cnt);
 			$linkWeight=$displaymax{"$i\_$j"};
 			$midNodeShape="circle";
 			$textcolor="black";
@@ -1075,10 +948,11 @@ if ($overallrelationship){
 	print AISEE "node: {title:\"norel\" label: \"no relationship found\"}}\n"  ;
 }
 
-$left =">$project/html/left.html";
-open (LEFT, "$left");
 
-#print LEFT start_html(-title=>'Chilibot: mining PubMed for relationships', -style=>{'src'=>'/chilibot/chilibot.css'});
+
+$left =">$project/html/left.html";
+open (LEFT, "$left") || die "can't open $left";;
+
 
 print LEFT "$htmlcss\n<font size=-1><a href=\"/index.html\" target=_TOP>Chilibot</a> | <a href=/index.html target =_top >New Search</a> | \n <a href=/cgi-bin/chilibot/chilibot.cgi?PREV=t target=_top>Saved Searches </a>|\n </font></p>";
 
@@ -1102,7 +976,6 @@ if ($linkcnt>60){
 	$scale=100;
 }
 
-#print LEFT "sclae $scale";
 
 if ($linkcnt==0) { 
 	print LEFT "<font color=red><b>Chilibot did not find any interaction among the terms</b></font>"; 
@@ -1134,34 +1007,10 @@ if (open(USERPREF, "$homedir/.userpref")){
 	}
 }
 
-#print LEFT "<table><tr><td><b>This session</b></td></tr></table>";
 print LEFT "<p>";
-#print LEFT "<div class=\"instruction\"> Click on the <i>link</i> or <i>node</i> to retrieve more information.<a href=/cgi-bin/chilibot/chilibot.cgi?linksNodes=1 target=right>Disable this message.</a>. </div>" if ((!$pref{"linksNodes"}) || ($user eq "89c41e4588712859ccb9cd19bfd64a17"));
 	
 
-#print LEFT " <b>Interactive functions: </b> <p>\n";
 
-sub pct_disabling{
-# note very useful
-#	<select name="PCT">
-#		<option value=.4 >40% </option>
-#		<option value=.2 >20% </option>
-#		<option value=.1 >10% </option>
-#jj	</select>
-#	of the relationships.
-}
-
-sub mesh_disabling{
-#becaue the new md5 includes all synomys, but it is difficult to get that from the mesh module.
-	print LEFT <<MESH;
-	<form action=/cgi-bin/chilibot/chilimesh.cgi target=right method=post> <input type ="submit" name="IN" value="Generate MESH theme">
-	<input type="hidden" name="FLD" value="$name">
-	<input type="hidden" name="GDLFILE" value="gdl">
-	<input type="hidden" name="USER" value="$user">
-	</FORM>
-MESH
-
-}
 	for(0 .. $term_number) {
 		if ($node_print{$_} =="") {
 			next if (uc($symb[$_]) eq "SECONDLIST");
@@ -1170,7 +1019,6 @@ MESH
 		}
 	}
 
-=cut
 	print LEFT <<MAP;
 	<FORM ACTION=/cgi-bin/chilibot/chilidraw.cgi TARGET="left" method=post>
 	<input type="submit" value="Filter graph by ">
@@ -1186,13 +1034,12 @@ MESH
 	</FORM>
 	</center>
 MAP
-=cut
 	$theoretical=$term_number*($term_number+1)/2;
 	}
 
 	print LEFT <<UPDATE;
 	<hr>
-	<form action=/cgi-bin/chilibot/chilibot.cgi TARGET=_top method=post> <input type ="submit" name="IN" value="Modify session"> 
+	<form action=/cgi-bin/chilibot/chilibot.cgi TARGET=_top method=post> <input type ="submit" name="IN" value="Modify search"> 
 	<input type="hidden" name="name" value="$name">
 	<input type="hidden" name="overwrite" value="1">
 	<input type="hidden" name="saved_syn" value="1">
@@ -1222,7 +1069,6 @@ GRP1
 
 
 print LEFT "</center><p><b>Notes:</b><br>";
-#print LEFT "Possible number of searches to perform: $theoretical <br>
 print LEFT "<pre>Number of terms: $term_number\n";
 print LEFT "Searches performed: $total_search\n";
 print LEFT "Relevant PubMed records: $available_lit\n";  
@@ -1239,9 +1085,7 @@ print LEFT "\nStart  time: $start_time \nFinish time: $finish_time\n";
 print LEFT "Image created using <a href=\"http://www.aiSee.com/\" target=new>aiSee</a></pre><hr>";
 
 
-&usability("$user", "searches:$total_search\tavailable:$available_lit\tanalysed:$sampled_lit", "$name", "$email");
 
-print "\n<p><b>Done! You will be re-directed to the results page. If not, please follow <a href=/chilibot/$user/$name/index.html target=_top>this link</a> to view the results</b> <body onload=\"doRedirect()\"> " if ($standalone !=2);
 
 
 
@@ -1252,14 +1096,11 @@ $standalone=2 => not print (2term);
 $standaloen=3 => print (simplified default search);
 =cut
 
-	&cleanjobs($homedir); # jobs count
-#print "user/email $user / $email ";
-	&email ($user, $email, $name, $daemon);
-}
+#	&cleanjobs($homedir); # jobs count
+#} # original end;
 
 sub cleanjobs {
 	my $homedir = shift;
-#	print "dir: $homedir";
 	open(JOBS, "$homedir/.jobs");
 	$jobs=<JOBS>;
 	$jobs-- if ($jobs>=1);
@@ -1301,19 +1142,18 @@ sub print_sentences {
 	my $weight=shift;
 	my $sntText=shift;
 	my $dir=shift;	
-	#$snt_cnt{"$i\_$j"}++;
 	$pmid=substr($sntKey, 0, index ($sntKey, "_"));
-	#print "debug 878 | $abs_dir | $sntKey, $pmid<br>\n";
 	open(META, "$abs_dir/ID_$pmid")|| die;
 	$meta=<META>;
-	$journal=$1 if ($meta=~m|<MedlineTA>(.+)</*\s*MedlineTA>|s);
-	$year=$1 if ($meta=~m|<Year>(\d\d\d\d)</*\s*Year>|s);
+	$journal=$1 if ($meta=~m|<Journal>(.+)<_Journal>|s);
+	$year=$1 if ($meta=~m|<Year>(\d\d\d\d)<_Year>|s);
 	$sntText=~s/RESULTS*|CONCLUSIONS*//;
-	#print RIGHT_H "<li>$sntText direction: $symb{$i} $dir <a href=\"http://www.ncbi.nlm.nih.gov/entrez/query.fcgi?cmd=Retrieve&db=PubMed&list_uids=$pmid&dopt=Abstract\" target=new> <font color = gray, size=-1>Ref: $pmid $journal, $year  </a> </font><p>\n";
-	print RIGHT_H "<li>$sntText <a href=\"http://www.ncbi.nlm.nih.gov/entrez/query.fcgi?cmd=Retrieve&db=PubMed&list_uids=$pmid&dopt=Abstract\" target=new> <font color=#666666 size=-1>Ref: $journal, $year </a></font><p></li>\n";
+	print RIGHT_H "<li>$sntText <a href=\"http://www.ncbi.nlm.nih.gov/entrez/query.fcgi?cmd=Retrieve&db=PubMed&list_uids=$pmid&dopt=Abstract\" target=new> <font color=#666666 size=-1>$journal, $year </a></font><p></li>\n";
 }
 
+
 sub co_abs{
+	# print co_occurrance abstracts
 	my $i = shift; 
 	my $j = shift; 
 	my $pmids=shift;
@@ -1326,9 +1166,9 @@ sub co_abs{
 		open(ABST, "$abs_dir/ID_$pmid"); ## need fix  #|| die "$!";
 		while(<ABST>){
 #		print ">>$pmid= $_<br>";
-			if ($_=~m|<MedlineTA>(.+)</*\s*MedlineTA>|s){
+			if ($_=~m|<Journal>(.+)<_Journal>|s){
 				$journal=$1;
-				$year=$1 if ($_=~m|<Year>(\d+)</*\s*Year>|s);
+				$year=$1 if ($_=~m|<Year>(\d+)<_Year>|s);
 				$year="" if ($year !~/\d\d\d\d/);
 			} else {
 				$abs.=$_;
@@ -1414,34 +1254,9 @@ sub countRef {
 }
 
 
-sub usability {
-	my $user=shift;
-	my $state=shift;
-	my $name=shift;
-	my $email=shift;
-	($Second, $Minute, $Hour, $Day, $Month, $Year, $WeekDay, $DayOfYear, $IsDST) = localtime(time);
-	$Month++;
-	$Month="0".$Month if ($Month<10);
-	$Day="0".$Day if ($Day<10);
-	$Hour="0".$Hour if ($Hour<10);
-	$Minute="0".$Minute if ($Minute<10);
-	$Second="0".$Second if ($Second<10);
-	$time="2006-".$Month."-".$Day." ".$Hour.":".$Minute.":".$Second;
-	$input="/home/httpd/html/chilibot/$user/$name/input";
-	$user=md5_hex($user);
-	open (TERM, $input) ||die "no $input";
-	@terms=<TERM>;
-	open (ULog,">>/home/httpd/cgi-bin/chilibot/usability.xml") || die "no xml file found";
-	flock(ULog, 2);
-	print ULog "\n<query>\n\t<user>$user</user>\n\t<time>$time CST</time>\n\t\t<terms>\t@terms\t\t</terms>\n" ;
-	print ULog "\t<name>$name</name>\n";
-	print ULog "\t<stat>$state</stat>\n";
-	print ULog "\t<email>$email</email>\n";
-	print ULog "\t<ip>$ENV{REMOTE_ADDR}</ip>\n";
-	print ULog "</query>\n";
-	close (Ulog);
-}
+system ("echo 100 > $project/status");
 
+}
 
 1;
 

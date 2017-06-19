@@ -12,7 +12,7 @@ $thetable=<<THETABLE;
 <table width=85% bgcolor=#ccddcc border=1 cellspacing=0 > 
 <tr>
 
-<td align=center><a href=/chilibot/index.html target=_top>
+<td align=center><a href=/index.html target=_top>
 	New Session</a></td>
 
 <td align=center><a href=/cgi-bin/chilibot/chilibot.cgi?PREV=t target=_top>

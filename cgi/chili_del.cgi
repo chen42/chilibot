@@ -20,12 +20,18 @@ $query = new CGI;
 $folder=$query->param('FLD');
 $relation=$query->param('REL');
 $project="/home/httpd/html/chilibot/$user/$folder";
-
 $project=~s/\/$//;
 
 
 $scale=&del;
 &replc($scale);
+
+
+open(DELMSG, ">/home/httpd/html/chilibot/$user/$folder/html/deleted.html") or die "failed to open file to write delete message $user $folder";
+print DELMSG "$htmlcss\n<b> $relation</b><p>Chilibot has followed your instruction and deleted this relation. You may need to use the <b>reload frame</b> menu of your browser to see the new graph.<br>";
+close(DELMSG);
+
+
 
 $frame=<<FRAME;
 <html>
@@ -38,15 +44,14 @@ $frame=<<FRAME;
 	Scrolling=auto>
 	<frame
 	name ="right"
-	SRC="/legend.html"
+	SRC="/chilibot/$user/$folder/html/deleted.html"
 	scrolling=auto>
 	</frameset>
 FRAME
 
 
-
 print "$frame";
-print "<b> $relation</b><p>Chilibot has followed your instruction and deleted this relation. Please use the <font size =+1><b>reload</b></font> button of your browser to see the new graph.<br>";
+
 sub del {
 	my ($linkcnt);
 	open (GDL, "$project/gdl")|| die "missing $project/gdl";
@@ -82,7 +87,6 @@ sub del {
 	}
 	unlink ("$project/gdl");
 	rename ("$project/gdl.bak",  "$project/gdl"); 
-#print " $relation: $i $icnt, $j $jcnt<br>\n";
 	return ($scale);
 }
 

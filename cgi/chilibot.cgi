@@ -4,6 +4,7 @@ use CGI qw(:standard);
 #use CGI::Carp; #qw(fatalsToBrowser);
 use File::Path;
 use Digest::MD5 qw(md5_hex);
+use Proc::Daemon;
 
 require '/home/httpd/cgi-bin/chilibot/chili_psql.pm'; 
 require '/home/httpd/cgi-bin/chilibot/chili_sent.pm';
@@ -14,6 +15,8 @@ require '/home/httpd/cgi-bin/chilibot/chili_strg.pl';
 require '/home/httpd/cgi-bin/chilibot/chili_insubs.pl';
 #require '/home/httpd/cgi-bin/chilibot/chili_usability.pl';
 
+
+my $daemon = Proc::Daemon->new(work_dir=>'/tmp/');
 my $cgi= new CGI;
 $|=1;
 
@@ -34,10 +37,8 @@ $email="default\@chilibot.net" if ($email eq "");
 
 if (cookie('chocolnuts')){
 	$user=cookie('chocolnuts');
-	#print "<br>found cookie, user= $user";# need $cgi->header();
 } else {
 	$user=md5_hex("$email");
-	#print "<br>no cookie, user= $user";
 }
 
 
@@ -267,12 +268,33 @@ if ($cgi->param('IN')) {
 		$min_abs_term=$min_abs_pair=$acro=1;
 		$max_abs=30;
 		$nodecolor="lightcyan";
-		&funstarts ($user, $email, $fname, $name, $min_abs_term, $min_abs_pair, $max_abs, $update_query, $nodecolor,$standalone,$nlp, $acro);
+
+		my $kid_pid=$daemon->Init;
+		unless($kid_pid){
+			&funstarts ($user, $email, $fname, $name, $min_abs_term, $min_abs_pair, $max_abs, $update_query, $nodecolor,$standalone,$nlp, $acro);
+		}
+		my $progress=0;
+		print "<br>The progress of your search is shown below but you can also close this window and check back later. The results will be in the \"Saved Searches\" section. "; 
+		while ($progress <100) {
+			sleep(5);
+			open (PRO, "/home/httpd/html/chilibot/$user/$name/status") || die "can't open $name/status";
+			$progress=<PRO>;
+			close(PRO);
+			print " $progress%,"; 
+		}
+		&cleanjobs("/home/httpd/html/chilibot/$user/"); 
+		sleep(10);
+		print "\n<p><b>Done! Please follow <a href=/chilibot/$user/$name/index.html target=_top>this link</a> to view the results</b> ";
+		#print "\n<p><b>Done! You will be re-directed to the results page. If not, please follow <a href=/chilibot/$user/$name/index.html target=_top>this link</a> to view the results</b> <body onload=\"doRedirect()\"> " if ($standalone !=2);
+
+
 
 	}
-}
+
+    }
 
 }
+
 if ($cgi->param('SYN_EDIT')) {
 	my $min_abs_term	=$cgi->param('min_abs_term');
 	my $min_abs_pair	=$cgi->param('min_abs_pair');
@@ -304,7 +326,9 @@ if ($cgi->param('SYN_EDIT')) {
 #	print "$user, $name, $synopsis, $min_abs_term, $min_abs_pair, $max_abs, $update_query";
 	$min_abs_pair=$min_abs_term=1;
 	$nlp=1 if ($name=~/nlp$/);
+	# re-run the analysis, Most of the searches should have been done. 
 	&funstarts ($user, $email, $fname, $name, $min_abs_term, $min_abs_pair, $max_abs, $update_query, $nodecolor,0,$nlp, $acro);
+
 }
 
 
@@ -380,19 +404,25 @@ sub prev_sess {
 			next if ($_ eq "summary");
 			$dir_name=$_;
 			#$dir_name=~s/\_/ /g;
+			my  $dir_state;
 			if (!-e "/home/httpd/html/chilibot/$user/$dir_name/html/left.html"){
 				print "<font color=grey>$dir_name ..... <a href=/chilibot/$user/$dir_name/queryhistory.html target=_top> no refs </a> || </font>  ";
 				print "<a href=/chilibot/$user/$dir_name/input target=_top> view input file</a> ||  ";
 			} else {
 				print "$dir_name ..... <a href=/chilibot/$user/$_ target=_top> view</a> || ";
-				if (!-e "/home/httpd/html/chilibot/$user/$dir_name/html/chilibot.png"){
-					print " no relationship found || ";
-					print "<a href=/chilibot/$user/$dir_name/input target=_top>input file</a> || ";
-				}elsif ((stat("/home/httpd/html/chilibot/$user/$dir_name/html/chilibot.png"))[7]<100)  {
-					print " no relationship found || ";
-				}
-
 			}
+			if (!-e "/home/httpd/html/chilibot/$user/$dir_name/html/chilibot.png"){
+				$state="No relationship found || ";
+			} elsif ((stat("/home/httpd/html/chilibot/$user/$dir_name/html/chilibot.png"))[7]<100)  {
+				$state="No relationship found || ";
+			}
+			my $status_file= "/home/httpd/html/chilibot/$user/$dir_name/status";
+			if (-e $status_file){
+				open(PCT, $status_file) || die "cannot open $status_file";	
+				my $pct=<PCT>;
+				$dir_state="<font color=\"red\"> $pct% done</font> || " if ($pct !~/\d\.\d/ && $pct<100);
+			}
+			print "$dir_state <a href=/chilibot/$user/$dir_name/input target=_top>input file</a> || ";
 			print "<a href=/cgi-bin/chilibot/chilibot.cgi?DELETE=t&USER=$user&DELFLD=$dir_name>delete</a>\n";
 			print "<br>\n";
 		}
@@ -407,35 +437,6 @@ sub create_new_session {
 	print "<b>If you come to this page from results saved using a previous version of Chilibot, please follow <a href=/index.html target=_top>this link </a> to start a new search.</b>" ; 
 	
 }
-
-
-sub old_create_new_session {
-	print "<center><p><b> Please read <a href= http://www.ncbi.nlm.nih.gov/About/disclaimer.html target=new> NCBI's Disclaimers and Copyright Notice</a> </b></center>";
-	print "<center><table width=80%><tr><td align=left>";
-	print start_form;
-	print "<p><b>Session Name</b> ", textfield(-name=>'name', -size=>32, -value=>$name), br;
-	if ($overwritebox==1) {
-		print "<p><font color=blue>Session exists! Please either rename it or overwrite it <br>Overwrite<INPUT TYPE=\"checkbox\" name=\"overwrite\" CHECKED> </font>";
-		#print " Retrieve saved Synonym list <INPUT TYPE=\"checkbox\" name=\"saved_syn\" value=1> </font><p>";
-	}
-	print "<p><b>Please list your query terms in the box below. Requirements:</b> <br> 1) One term per line, minimum 2 terms, maximum 50 terms (5 terms for test account) <br> 2) Supported query terms include gene symbols, UniGene IDs (human, mouse, rat), or free-form keywords. <p><b>Option 1</b>: microarray data (in folds) can be used to color code the nodes. You can provide the data on the same line as the term, separate them with either a space or a tab. <br><b> Option 2:</b> User supplied synonyms are supported. You can put them in parenthesis. Multiple synonyms need to be separated by semicolon(s). ",p,
-	"<pre>
-	Example: 
-
-	Apoptosis (programmed cell death; PCD)
-	Mm.2453		4.22
-	TrkB 		1.57
-	creb 		0.33
-	BDNF 		0.61
-	</pre>",
-	textarea(-name=>'list', -cols=>90, -rows=>25 -value=>@list), 
-	br,
-	submit('IN','next >'),  
-
-	end_form;
-	print "</tr></td></table></center>";
-}
-
 
 
 

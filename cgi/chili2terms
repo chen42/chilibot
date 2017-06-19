@@ -21,11 +21,6 @@ print $cgi->header();
 	
 #print "<meta http-equiv=\"refresh\" content=\"1\"; URL=\"$result\">";
 
-if ($ENV{"REMOTE_ADDR"} =~/130.209.6./ ) {
-	print " please contact Hao Chen for running large batch queries";
-	exit;
-}
-
 my $user="terms";
 my $name=int(rand(1000)*10);
 $homedir="/home/httpd/html/chilibot/$user";
@@ -45,8 +40,10 @@ my $term2=$cgi->param('term2');
 
 @terms=($term1, $term2);
 
+# testing
+#
+@terms=("bdnf","trkb");
 # for  usability study 
-
 #& usability("terms", "init", "$name","default\@chilibot.net", "$term1\n\t$term2");
 
 mkdir ($homedir."/".$name);

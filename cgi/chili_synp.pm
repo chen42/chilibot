@@ -71,8 +71,8 @@ sub synopsis {
 		}
 		open(META, "$abs_dir/ID_$_");
 		my $meta=<META>;
-		$journal=$1 if ($meta=~m|<MedlineTA>(.+)</*\s*MedlineTA>|s);
-		$year=$1 if ($meta=~m|<Year>(\d+)</*\s*Year>|s);
+		$journal=$1 if ($meta=~m|<Journal>(.+)<_Journal>|s);
+		$year=$1 if ($meta=~m|<Year>(\d+)<_Year>|s);
 		$answer{$_} =~ s/ not / NOT /g;
 		$answer{$_} =~ s/ +,/,/g;
 		#hightlighting synonyms
