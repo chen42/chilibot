@@ -57,7 +57,7 @@ sub get_syno {
 	my $i=-1;
 	my $project=$homedir."/".$name;
 	my $synlist;
-	print "<p>Retrieving synonyms..\n";
+	#print "<p>Retrieving synonyms..\n";
 
 	open (OINPUT, "$homedir/$name/input") || die "cannot open $homedir/$name/input"; 
 
@@ -231,6 +231,7 @@ MAP
 			} else {
 				$bgcolor="#ccddcc";
 			}
+			$printSyno=$_;
 			print SYNO "<TR  bgcolor=$bgcolor><TD><li> $printSyno  <font size=-1 face=helvetica>";
 			$printSyno=~ s/ +/\+/g;
 			print SYNO " <a href=http://eutils.ncbi.nlm.nih.gov/entrez/query.fcgi?cmd=search&term=$printSyno&db=PubMed target=new> [PubMed] </a>  </font>";
@@ -246,7 +247,6 @@ MAP
 		next if $syno=~/^!/;
 		$seek[$i] .=  "\%28" . $syno. "[tiab]\%29";
 	}
-
 }
 
 print SYNO "</table>\n";
@@ -265,15 +265,16 @@ for (0 .. $i) {
 	}
 }
 	$term_number=$i;
-
+=cut
 	if ($term_number <3){
 		if (!$standalone){
 			$rad=int ( rand(19)); 
 			print "<p><center><table width=70%><tr><td><font size=+1 face=courier><br>Dear ", ucfirst($fname),", <p> Your search for relationship is underway, as you can see. <p>BTW, $msg[$rad] <p> Love, <p>Chil</font> </td></tr></table></center>\n" 
 		}
 	} elsif (( $standalone == 0) || ($standalone == 3)){ # let go if batch mode , i.e. standalone =1
-		print "<p><center><table width=70%><tr><td><font size=+1 face=courier><br>Dear ", ucfirst($fname),", <p> Hmm, it looks like you are hungry for information, but I need a little time to gather that. Please check back in about 30 min under the \"Saved Results\" section.  <p> Love, <p>Chil</font> </td></tr></table></center>\n"; 
+		print "<p><center><table width=70%><tr><td><font size=+1 face=courier><br>Dear ", ucfirst($fname),", <p> Hmm, it looks like you are hungry for information, but I need a little time to gather that. Please check back shortly under the \"Saved Results\" section.  <p> Love, <p>Chil</font> </td></tr></table></center>\n"; 
 	}
+=cut
 print "<p>";
 $input=">$project/statement";
 open (STAT, "$input") || die;
@@ -1068,8 +1069,8 @@ HUB
 GRP1
 
 
-print LEFT "</center><p><b>Notes:</b><br>";
-print LEFT "<pre>Number of terms: $term_number\n";
+print LEFT "</center><p><b>Notes:</b>";
+print LEFT "<pre>Number of terms: ", $term_number+1,"\n";
 print LEFT "Searches performed: $total_search\n";
 print LEFT "Relevant PubMed records: $available_lit\n";  
 $sampled_pct=int $sampled_lit/$available_lit*10000;
@@ -1084,20 +1085,6 @@ $finish_time=localtime();
 print LEFT "\nStart  time: $start_time \nFinish time: $finish_time\n";
 print LEFT "Image created using <a href=\"http://www.aiSee.com/\" target=new>aiSee</a></pre><hr>";
 
-
-
-
-
-
-=cut
-$standalone=0 => print ;
-$standalone=1 => print; batch
-$standalone=2 => not print (2term);
-$standaloen=3 => print (simplified default search);
-=cut
-
-#	&cleanjobs($homedir); # jobs count
-#} # original end;
 
 sub cleanjobs {
 	my $homedir = shift;
@@ -1115,6 +1102,7 @@ sub cleanjobs {
 sub hashValDesNum {
    	$synrank{$b} <=> $synrank{$a};
 }
+
 sub print_node {
 	$overallrelationship=1;
 	my $node=shift;

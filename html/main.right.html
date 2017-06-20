@@ -1,115 +1,45 @@
-<html>
-<head>
+<html><head><title>Chilibot: Finding links between molecules from PubMed</title>
+	<link rel=stylesheet href="/chilibot.css" type="text/css">
+<style type="text/css">
+A:link {text-decoration: none; color: #000050}
+A:visited {text-decoration: none; color:#000050}
+A:hover {text-decoration: none; color: #000099}
 
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</style>	
+	</head>
 
-<link rel=stylesheet href="chilibot.css" type="text/css">
 
-</head>
-
-<center><h2>Mining PubMed for relationships</h2></center>
-<center><img src=/chilibot/images/bluebar.gif width=600 height=3 border=0></center>
-	
-	<p>
-
-	Chilibot searches PubMed literature database (abstracts) about specific relationships between<b> proteins, genes, or keywords</b>. The results are returned as a graph <a href=/examples.html>(see examples)</a>. We support several different search methods.
-<p>
-
-<table width=90%><tr><td colspan=2>
-	<h3>Search for relationship between <font color=#0066cc>two </font> genes, proteins or keywords</h3>
-</td></tr>
-<tr><td bgcolor=#ECF8FF>
-<font size=-1><b>Examples:</b> <br>
-	BDNF & TRKB   <br>
-	BDNF & polymorphism <br>
-	BDNF & <a href=/manual.html#modulation>modulate</a></font>
-</td><td bgcolor=#ECF8FF valign=middle>
 <center>
-<form action="http://www.chilibot.net/cgi-bin/chilibot/chili2terms" method="post" target="mainright">
-<input name="term1" size="14"> & <input name="term2" size="14"> <input value="Search" type="submit">
-</form>
+<p>
+
+<h2><font color=#FF3333>Chili</font><font color="#006633">bot</font> 
+	<p>
+	<div >
+<table>
+
+	<colgroup>
+	<col width=1px>
+	<col width=20px > </colgroup>
+<tr><td bgcolor=#FF3333></td> <td bgcolor="#ecf8ff"><a href="main.right.html" target=mainright><b>New Search</b></a> </td></tr> 
+<tr><td bgcolor=#FF6633></td> <td bgcolor="#ecf8ff"><a href="/cgi-bin/chilibot/chilibot.cgi?PREV=t target=right" target=mainright><b>Saved Results</b></a> </td></tr> 
+<tr><td bgcolor=#FF9933></td> <td bgcolor="#ecf8ff"><a href="loginout.html" target=mainright><b>Log In/Out</b></a> </td></tr>
+<tr><td bgcolor=#FFAA33></td> <td bgcolor="#ecf8ff"><a href="/cgi-bin/chilibot/createuser.cgi" target=mainright><b>New Account</b></a> </td></tr>
+
+
+<tr><td bgcolor=#FFCC33></td> <td bgcolor="#ecf8ff"><a href="/manual.html" target=mainright><b>Documentation</b></a> </td></tr>
+<tr><td bgcolor=#CCEE33></td> <td bgcolor="#ecf8ff"><a href="/examples.html" target=mainright><b> Examples </b></a> </td></tr>
+
+<tr><td bgcolor=#AAFF33></td> <td bgcolor="#ecf8ff"><a href="/news.html" target=mainright><b>Site News </b></a> </td></tr>
+<tr><td bgcolor=#66FF33></td> <td bgcolor="#ecf8ff"><a href="download.html" target=mainright><b>Download</b></a> </td></tr>
+<tr><td bgcolor=#33FF33></td> <td bgcolor="#ecf8ff"><a href="/contact.html" target=mainright><b>Contact Us</b></a><b> <font color="#efefef">..</font></b></td></tr>
+<tr><td colspan=2>
+<font size=-2>  Last update: 06/18/17 </font> 
+</td></tr> 
+</table>
+</div>
+</font>
+<p>
+
+
 </center>
-</td> </tr> </table>
-
-<p>
-<table width=90%><tr><td colspan=2><h3>
-	Search for relationships between
-<a href=/cgi-bin/chilibot/chili_sess?onelist=t>many</a> genes, proteins, or keywords</font></a></h3>
-</td></tr>
-<tr><td bgcolor=#ECF8FF>
-<font size=-1><b>Example:</b></font> <br>
-<pre>
-Apoptosis
-TrkB
-BDNF
-Nur77
-</pre>
-</td><td bgcolor=#ECF8FF><center>
-<a href="/cgi-bin/chilibot/chili_sess?onelist=t">
-<img src="/chilibot/images/pairwise.png" border=0></a></center></td></tr>
-</table>
-
-<p>
-<table width=90%><tr><td colspan=2>
-<h3>Search for relationships between <a href=/cgi-bin/chilibot/chili_sess?twolists=t>two lists</a> of genes, proteins, or keywords </a></font> </h3>
-</td></tr>
-
-<tr><td bgcolor=#ECF8FF>
-<font size=-1><b>Example:</b></font> <br>
-<pre>
-List 1 <font color=#0066cc>
-Apoptosis
-Cancer</font>
-List 2 <font color=#ECF8FF">
-BDNF
-Creb
-TrkB </font> </pre>
-</td><td bgcolor=#ECF8FF><center>
-<a href=/cgi-bin/chilibot/chili_sess?twolists=t>
-<img src="/chilibot/images/twolists.png" border=0></a></center></td></tr>
-</table>
-
-<p>
-<table width=90%><tr><td>
-
-	<h3><a name="advopt">Advanced options</a></h3>
-	<li> <a href=/manual.html#hypo>Automated hypothesis generation</a>
-	<a href=examples.html#hypo>[graph]</a>
-	<li> <a href=/manual.html#context>Restricting context using keywords</a>
-	<li> <a href=/manual.html#usersyn>Providing your own synonyms</a>
-	<li> <a href=/manual.html#editsyn>Modifying synonyms provided by Chilibot</a>
-	<li> <a href=/manual.html#colorcoding>Color coding nodes with gene expression values</a>
-	<li> <a href=/manual.html#modulation>Special search: modulation</a>
-
-</td></tr></table>
-
-</tr></td> </table>
-
-<p>
-<p>
-<p>
-<p>
-<p>
-<p>
-<p>
-<p>
-<p>
-<p>
-<p>
-<p>
-<p>
-<p>
-<p>
-<p>
-<p>
-<p>
-<p>
-<p>
-<p>
-<p>
-<p>
-<p>
-<p>
-<p>
-<p>
-<p>
+</body></html>

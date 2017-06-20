@@ -20,9 +20,6 @@ my $daemon = Proc::Daemon->new(work_dir=>'/tmp/');
 my $cgi= new CGI;
 $|=1;
 
-#print $cgi->header();
-
-
 &logout if  ($cgi->param('LOGOUT')); 
 
 if ($cgi->param('user')) {
@@ -42,14 +39,11 @@ if (cookie('chocolnuts')){
 }
 
 
-
-
 $the_cookie = cookie(-name=>'chocolnuts',
 	     -value=>$user, 
 		 -path=>'/cgi-bin/chilibot/',
 		 -expires=>'+1d');
 print header(-cookie=>$the_cookie);
-#print "$user";
 $homedir="/home/httpd/html/chilibot/$user";
 
 &userpref("linksNodes") if ($cgi->param('linksNodes')) ;
@@ -61,15 +55,13 @@ sub userpref {
 	print "Excellent! I won't tell you this again in your next session, if you are a registered user.";
 	exit 0;
 }
-#print "user is $user<br>";
-#print "homedir $homedir <br>";
-#make new dir when necessary.
+
 if (!-e $homedir){
 	system("mkdir $homedir");
 	mkdir "$homedir/.pmid";
 }
 
-#not sure when this is used 2006-02-18 
+=cut
 if ($cgi->param('NEW')) {
 	&print_title("New Session");
 	open (JOBS,"$homedir/.jobs");
@@ -81,11 +73,11 @@ if ($cgi->param('NEW')) {
 	}
 	&create_new_session;
 }
+=cut
 
 # process user input from the static form
 
 if ($cgi->param('IN')) {
-
 	my $name=$cgi->param('name');
 	$name=&defaultName if ($name=~/^\s*$/);
 	$name=~ s/ +/\_/g;
@@ -113,7 +105,6 @@ if ($cgi->param('IN')) {
 		$repeat=1;
 	}
 
-
 	if ($cgi->param('list')){ 
 		$listin=$cgi->param('list');
 		#	print "listin<pre>$listin</pre>\n";
@@ -128,16 +119,12 @@ if ($cgi->param('IN')) {
 		$list1=~s/\n/\t0.67676767\n/g;
 		$list1.=    "\t0.67676767\n"; # for color coding the text words
 
-
 		$listin=$list1."\nsecondList\n".$list2;
 		@orilist1=split (/\n/, $list1);
 		@orilist2=split (/\n/, $list2);
 		@orilist=(@orilist1, "secondList", @orilist2);
-
-		
 	}
 
-	#&usability ("$user", "init", "$name", "$email", $listin);
 	my @orilist=split (/\n/, $listin);
 	foreach(@orilist){
 		next if ($_ !~/\w/);
@@ -148,20 +135,18 @@ if ($cgi->param('IN')) {
 			$repeat=1;
 		}
 		$termcnt++;
-		#print "$termcnt, $_<br>";
 	}
-#print "<br>.... emailL $email";
+=cut
 	if (($termcnt > 5) && (!$list1) && ($email eq "default\@chilibot.net")){
 		print "\n<div class=\"warning\" >Please provide an email address so that we can email you the results.</div>\n ";
 		$repeat=1;
 	}
-
 	if (($termcnt > 10) && ($list1)&& ($email eq "default\@chilibot.net")){
 		print "<div>Please provide an email address so that we can email you the results.</div>\n ";
 		$repeat=1;
 	}
+=cut
 
-#print "session name: $name<br>";	
 	 
 	if ($termcnt>50) {
 		if ($user !~/^rhomayouni$|^hao$|^yan|^flebeda/i) {	
@@ -183,13 +168,10 @@ if ($cgi->param('IN')) {
 			}
 		}
 	}
-#	print "</b></font> repeat= $repeat / $saved_syn";
 	if (($repeat) && (!$saved_syn)) {
-
 		&create_new_session;
 	} else { # everything is fine, proceed 
-
-		#print "starting new search <br>";
+		#starting new search ;
 		mkdir ($homedir."/".$name);
 		mkdir "/home/httpd/html/chilibot/$user/$name/html";
 		$inputfile="$homedir/$name/input";
@@ -273,27 +255,34 @@ if ($cgi->param('IN')) {
 		unless($kid_pid){
 			&funstarts ($user, $email, $fname, $name, $min_abs_term, $min_abs_pair, $max_abs, $update_query, $nodecolor,$standalone,$nlp, $acro);
 		}
-		my $progress=0;
-		print "<br>The progress of your search is shown below but you can also close this window and check back later. The results will be in the \"Saved Searches\" section. "; 
-		while ($progress <100) {
-			sleep(5);
-			open (PRO, "/home/httpd/html/chilibot/$user/$name/status") || die "can't open $name/status";
-			$progress=<PRO>;
-			close(PRO);
-			print " $progress%,"; 
-		}
-		&cleanjobs("/home/httpd/html/chilibot/$user/"); 
-		sleep(10);
-		print "\n<p><b>Done! Please follow <a href=/chilibot/$user/$name/index.html target=_top>this link</a> to view the results</b> ";
-		#print "\n<p><b>Done! You will be re-directed to the results page. If not, please follow <a href=/chilibot/$user/$name/index.html target=_top>this link</a> to view the results</b> <body onload=\"doRedirect()\"> " if ($standalone !=2);
-
-
+		&print_progress($user, $name);	
 
 	}
 
     }
 
 }
+
+sub print_progress {
+	my $user =shift;
+	my $name =shift;
+
+	my $progress=0;
+	print "<br>The progress of your search is shown below, but you can also close this window and check back later. The results will be in the <b>\"Saved Searches\" </b> section. <p> "; 
+	while ($progress <100) {
+		sleep(5);
+		open (PRO, "/home/httpd/html/chilibot/$user/$name/status") || die "can't open $name/status";
+		$progress=<PRO>;
+		close(PRO);
+		chomp($progress);
+		print " $progress%,"; 
+	}
+	print "<p>On to linguistic analysis...<br>";
+	&cleanjobs("/home/httpd/html/chilibot/$user/"); 
+	sleep(9);
+	print "\n<p><b>Done! You will be re-directed to the results page. If not, please follow <a href=/chilibot/$user/$name/index.html target=_top>this link</a> to view the results</b> <body onload=\"doRedirect()\"> "; 
+}
+
 
 if ($cgi->param('SYN_EDIT')) {
 	my $min_abs_term	=$cgi->param('min_abs_term');
@@ -327,7 +316,15 @@ if ($cgi->param('SYN_EDIT')) {
 	$min_abs_pair=$min_abs_term=1;
 	$nlp=1 if ($name=~/nlp$/);
 	# re-run the analysis, Most of the searches should have been done. 
-	&funstarts ($user, $email, $fname, $name, $min_abs_term, $min_abs_pair, $max_abs, $update_query, $nodecolor,0,$nlp, $acro);
+	#
+	#
+	my $kid_pid=$daemon->Init;
+	unless($kid_pid){
+		&funstarts ($user, $email, $fname, $name, $min_abs_term, $min_abs_pair, $max_abs, $update_query, $nodecolor,0,$nlp, $acro);
+	}
+	&print_progress($user, $name);	
+
+
 
 }
 

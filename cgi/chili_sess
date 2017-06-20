@@ -71,15 +71,6 @@ print <<ONE2;
 
 ONE2
 
-if ($email){
-	print "<input type=hidden name=\"email\" value=$email type=\"text\"></td></tr>";
-
-	} else{
-	print"</td></tr> <tr><td> <b>Email address:</b>	<input name=\"email\" size=\"35\" type=\"text\">\n<br> <font size=-1> (if > 5 terms are queried)</font>
-	</td></tr>";
-
-}
-
 print <<ONE3;
  <tr><td> 
 		<b>Advanced options:</b><input type="checkbox" name="advopt"> 
@@ -132,15 +123,6 @@ print <<TWO2;
 		<br>
 	<font size=-1>(optional)</font> 
 TWO2
-
-if ($email){
-	print "<input type=hidden name=\"email\" value=$email type=\"text\"></td></tr>";
-	} else{
-	print"</td></tr> <tr><td colspan=2> <b>Email address:</b>
-	<input name=\"email\" size=\"35\" type=\"text\" value=$email> 
-	<br> <font size=-1> (if > 5 terms are queried)</font>
-		</td></tr>";
-}
 
 print <<TWO3;
 	<tr><td colspan=2> <b>Advanced options:</b>
