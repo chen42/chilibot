@@ -1,14 +1,13 @@
 
 <style type="text/css">
 
-body {
-        background-color: #ecf8ff;
-        color: black;
-}
+body { } 
 
-BODY {
-		background-color:#ecf8ff; 
+body {
+	background-color:#ecf8ff; 
         font-family: Verdana, sans-serif;
+	margin-top: 10 ;
+        color: black
 }
 
 A:link {text-decoration: underline; color:darkblue}
@@ -17,6 +16,7 @@ A:visited {text-decoration: underline; color:darkblue}
 table {
         border-collapse: collapse;
 }
+
 tbody {
         background: #f0f0f0;
 }
